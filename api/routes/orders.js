@@ -174,7 +174,7 @@ router.patch('/:id/status', authenticate, async (req, res) => {
         const { id } = req.params;
         const { newStatus, failureReason } = req.body;
 
-        const validStatuses = ['PLACED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'DELIVERY_FAILED'];
+        const validStatuses = ['PLACED', 'DELIVERED', 'CANCELLED'];
         if (!validStatuses.includes(newStatus)) {
             return res.status(400).json({
                 error: 'Bad Request',
@@ -206,27 +206,14 @@ router.patch('/:id/status', authenticate, async (req, res) => {
             });
         }
 
-        // Validate failure reason
-        if (newStatus === 'DELIVERY_FAILED' && (!failureReason || !failureReason.trim())) {
-            return res.status(400).json({
-                error: 'Bad Request',
-                message: 'A short reason is required when marking a delivery as failed.'
-            });
-        }
-
         const updatePayload = {
             status: newStatus,
             updated_at: new Date().toISOString()
         };
 
-        if (newStatus === 'OUT_FOR_DELIVERY') {
-            updatePayload.out_for_delivery_at = new Date().toISOString();
-        } else if (newStatus === 'DELIVERED') {
+        if (newStatus === 'DELIVERED') {
             updatePayload.delivered_at = new Date().toISOString();
             updatePayload.delivered_by = req.profile.id;
-        } else if (newStatus === 'DELIVERY_FAILED') {
-            updatePayload.delivery_failed_at = new Date().toISOString();
-            updatePayload.failure_reason = failureReason.trim();
         }
 
         const { data: updatedOrder, error: updateErr } = await supabaseAdmin

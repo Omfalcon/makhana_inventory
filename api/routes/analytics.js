@@ -61,7 +61,8 @@ router.get('/admin', authenticate, requireRole('ADMIN'), async (req, res) => {
                 items:order_items(*)
             `)
             .gte('created_at', startDate)
-            .lte('created_at', endDate);
+            .lte('created_at', endDate)
+            .order('created_at', { ascending: false });
 
         if (salesmanId) {
             ordersQuery = ordersQuery.eq('salesman_id', salesmanId);
@@ -88,7 +89,7 @@ router.get('/admin', authenticate, requireRole('ADMIN'), async (req, res) => {
         const totalOrdersToday = todayOrders.length;
         const ordersPlacedToday = todayOrders.filter(o => o.status === 'PLACED').length;
         const ordersDeliveredToday = todayOrders.filter(o => o.status === 'DELIVERED').length;
-        const ordersAwaitingDelivery = periodOrders.filter(o => o.status === 'PLACED' || o.status === 'OUT_FOR_DELIVERY').length;
+        const ordersAwaitingDelivery = periodOrders.filter(o => o.status === 'PLACED').length;
 
         // Metrics for selected period
         let deliveredRevenuePaise = 0;
@@ -132,7 +133,6 @@ router.get('/admin', authenticate, requireRole('ADMIN'), async (req, res) => {
                     totalOrders: 0,
                     deliveredOrders: 0,
                     pendingDeliveries: 0,
-                    failedDeliveries: 0,
                     cancelledOrders: 0,
                     unitsSold: 0,
                     deliveredRevenuePaise: 0,
@@ -144,8 +144,6 @@ router.get('/admin', authenticate, requireRole('ADMIN'), async (req, res) => {
             if (order.status === 'DELIVERED') {
                 salesmanStats[sId].deliveredOrders += 1;
                 salesmanStats[sId].deliveredRevenuePaise += order.total_amount_paise;
-            } else if (order.status === 'DELIVERY_FAILED') {
-                salesmanStats[sId].failedDeliveries += 1;
             } else if (order.status === 'CANCELLED') {
                 salesmanStats[sId].cancelledOrders += 1;
             } else {
@@ -236,7 +234,7 @@ router.get('/admin', authenticate, requireRole('ADMIN'), async (req, res) => {
                 } : null
             },
             salesmen: salesmanList,
-            products: productList,
+            products: [...productList].sort((a, b) => b.unitsSold - a.unitsSold || b.deliveredRevenuePaise - a.deliveredRevenuePaise),
             lowStockProducts,
             dailyTrends: Object.values(dailyTrends).sort((a, b) => a.date.localeCompare(b.date)),
             orders: periodOrders
@@ -282,9 +280,7 @@ router.get('/salesman', authenticate, async (req, res) => {
             if (o.status === 'DELIVERED') {
                 deliveredOrders += 1;
                 deliveredRevenuePaise += o.total_amount_paise;
-            } else if (o.status === 'DELIVERY_FAILED') {
-                failedDeliveries += 1;
-            } else if (o.status === 'PLACED' || o.status === 'OUT_FOR_DELIVERY') {
+            } else if (o.status === 'PLACED') {
                 pendingDeliveries += 1;
             }
 
@@ -305,7 +301,6 @@ router.get('/salesman', authenticate, async (req, res) => {
                 totalOrders,
                 deliveredOrders,
                 pendingDeliveries,
-                failedDeliveries,
                 totalRevenuePaise,
                 deliveredRevenuePaise,
                 unitsSold,
