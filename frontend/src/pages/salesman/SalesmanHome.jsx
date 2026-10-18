@@ -12,9 +12,7 @@ export default function SalesmanHome({ onNavigate }) {
   const [todayOrders, setTodayOrders] = useState([]);
   const [stats, setStats] = useState({
     placed: 0,
-    outForDelivery: 0,
     delivered: 0,
-    failed: 0,
     deliveredRevenuePaise: 0
   });
 
@@ -30,18 +28,14 @@ export default function SalesmanHome({ onNavigate }) {
       setTodayOrders(todayList);
 
       const placed = todayList.filter(o => o.status === 'PLACED').length;
-      const outForDelivery = todayList.filter(o => o.status === 'OUT_FOR_DELIVERY').length;
       const delivered = todayList.filter(o => o.status === 'DELIVERED').length;
-      const failed = todayList.filter(o => o.status === 'DELIVERY_FAILED').length;
       const deliveredRevenue = todayList
         .filter(o => o.status === 'DELIVERED')
         .reduce((sum, o) => sum + o.total_amount_paise, 0);
 
       setStats({
         placed,
-        outForDelivery,
         delivered,
-        failed,
         deliveredRevenuePaise: deliveredRevenue
       });
     } catch (err) {
@@ -62,7 +56,7 @@ export default function SalesmanHome({ onNavigate }) {
         <span className="text-xs font-semibold text-brand-200 uppercase tracking-wider">Salesman Dashboard</span>
         <h2 className="text-xl sm:text-2xl font-bold mt-1">Hello, {profile?.full_name || 'Partner'}</h2>
         <p className="text-xs sm:text-sm text-brand-100 mt-1">
-          Ready for today's orders & deliveries. Keep stock moving!
+          Ready for today's field orders & deliveries. Keep stock moving!
         </p>
 
         {/* Quick action shortcuts */}
@@ -87,22 +81,18 @@ export default function SalesmanHome({ onNavigate }) {
       {/* Today's KPI Counters */}
       <div>
         <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-2.5">Today's Progress</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-            <span className="text-xs text-slate-500 font-semibold block">Placed</span>
+            <span className="text-xs text-slate-500 font-semibold block">Placed Orders</span>
             <span className="text-2xl font-black text-amber-600 mt-1 block">{stats.placed}</span>
           </div>
           <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-            <span className="text-xs text-slate-500 font-semibold block">Awaiting Delivery</span>
-            <span className="text-2xl font-black text-blue-600 mt-1 block">{stats.placed + stats.outForDelivery}</span>
-          </div>
-          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-            <span className="text-xs text-slate-500 font-semibold block">Delivered Today</span>
+            <span className="text-xs text-slate-500 font-semibold block">Delivered Orders</span>
             <span className="text-2xl font-black text-emerald-600 mt-1 block">{stats.delivered}</span>
           </div>
           <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
             <span className="text-xs text-slate-500 font-semibold block">Delivered Cash</span>
-            <span className="text-lg sm:text-xl font-black text-slate-900 mt-1 block truncate">
+            <span className="text-base sm:text-xl font-black text-slate-900 mt-1 block truncate">
               {formatPaise(stats.deliveredRevenuePaise, false)}
             </span>
           </div>
@@ -125,7 +115,7 @@ export default function SalesmanHome({ onNavigate }) {
           <div className="bg-white p-8 rounded-xl border border-slate-200 text-center text-sm text-slate-400">
             Loading deliveries...
           </div>
-        ) : todayOrders.filter(o => o.status === 'PLACED' || o.status === 'OUT_FOR_DELIVERY').length === 0 ? (
+        ) : todayOrders.filter(o => o.status === 'PLACED').length === 0 ? (
           <div className="bg-white p-6 rounded-xl border border-slate-200 text-center text-slate-500 text-sm">
             <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
             No pending deliveries for today!
@@ -133,7 +123,7 @@ export default function SalesmanHome({ onNavigate }) {
         ) : (
           <div className="space-y-2.5">
             {todayOrders
-              .filter(o => o.status === 'PLACED' || o.status === 'OUT_FOR_DELIVERY')
+              .filter(o => o.status === 'PLACED')
               .slice(0, 3)
               .map(order => (
                 <div key={order.id} className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col gap-2">

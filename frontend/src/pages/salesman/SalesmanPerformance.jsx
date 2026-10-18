@@ -118,13 +118,13 @@ export default function SalesmanPerformance() {
 
             <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
               <div className="flex items-center gap-2 text-slate-500 text-xs font-bold">
-                <AlertTriangle className="w-4 h-4 text-rose-600" />
-                <span>Failed Deliveries</span>
+                <TrendingUp className="w-4 h-4 text-brand-600" />
+                <span>Total Booked</span>
               </div>
-              <span className="text-2xl font-black text-rose-600 mt-2 block">
-                {p.failedDeliveries}
+              <span className="text-xl font-black text-slate-900 mt-2 block font-mono truncate">
+                {formatPaise(p.totalRevenuePaise, false)}
               </span>
-              <span className="text-[10px] text-slate-400 font-medium">Reported with reason</span>
+              <span className="text-[10px] text-slate-400 font-medium">Placed + Delivered</span>
             </div>
           </div>
 
