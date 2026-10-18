@@ -167,12 +167,12 @@ export default function AdminDashboard({ onNavigate }) {
 
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 uppercase">Awaiting Delivery</span>
-            <Clock className="w-4 h-4 text-blue-600" />
+            <span className="text-xs font-bold text-slate-500 uppercase">Placed Orders</span>
+            <Clock className="w-4 h-4 text-amber-600" />
           </div>
-          <span className="text-2xl font-black text-blue-600 mt-2 block">{s.ordersAwaitingDelivery}</span>
+          <span className="text-2xl font-black text-amber-600 mt-2 block">{s.ordersAwaitingDelivery}</span>
           <span className="text-[11px] text-slate-400 mt-1 block">
-            Pending Day 2 dispatch
+            Awaiting field delivery
           </span>
         </div>
 

@@ -15,7 +15,8 @@ import {
   Calendar,
   AlertCircle,
   RefreshCw,
-  Printer
+  Printer,
+  CheckCircle2
 } from 'lucide-react';
 
 export default function AdminOrders() {
@@ -97,13 +98,26 @@ export default function AdminOrders() {
     }
   };
 
-  const filteredOrders = orders.filter(o => {
-    const q = search.toLowerCase();
-    const matchesSearch =
-      o.order_number.toLowerCase().includes(q) ||
-      o.customer_name.toLowerCase().includes(q) ||
-      o.customer_phone.includes(q);
+  const handleMarkDelivered = async (orderId) => {
+    if (!window.confirm('Mark this order as DELIVERED?')) return;
+    try {
+      setActionLoading(true);
+      await api.orders.updateStatus(orderId, 'DELIVERED');
+      await loadData();
+    } catch (err) {
+      alert(err.message || 'Failed to update order status');
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
+  const filteredOrders = orders.filter(o => {
+    const q = (search || '').toLowerCase().trim();
+    const orderNo = (o.order_number || '').toLowerCase();
+    const custName = (o.customer_name || '').toLowerCase();
+    const custPhone = (o.customer_phone || '').toLowerCase();
+
+    const matchesSearch = !q || orderNo.includes(q) || custName.includes(q) || custPhone.includes(q);
     const matchesStatus = !statusFilter || o.status === statusFilter;
     const matchesSalesman = !salesmanFilter || o.salesman_id === salesmanFilter;
 
@@ -116,7 +130,7 @@ export default function AdminOrders() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-black text-slate-900">Manage Orders</h2>
-          <p className="text-xs text-slate-500 font-medium">All salesman orders & deliveries</p>
+          <p className="text-xs text-slate-500 font-medium">All field orders & deliveries</p>
         </div>
         <button
           onClick={loadData}
@@ -144,20 +158,18 @@ export default function AdminOrders() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700"
+            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700"
           >
-            <option value="">All Statuses</option>
-            <option value="PLACED">Placed</option>
-            <option value="OUT_FOR_DELIVERY">Out For Delivery</option>
-            <option value="DELIVERED">Delivered</option>
-            <option value="DELIVERY_FAILED">Delivery Failed</option>
-            <option value="CANCELLED">Cancelled</option>
+            <option value="">All Statuses (Placed & Delivered)</option>
+            <option value="PLACED">Placed Orders</option>
+            <option value="DELIVERED">Delivered Orders</option>
+            <option value="CANCELLED">Cancelled Orders</option>
           </select>
 
           <select
             value={salesmanFilter}
             onChange={(e) => setSalesmanFilter(e.target.value)}
-            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700"
+            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700"
           >
             <option value="">All Salesmen</option>
             {salesmen.map((s) => (
@@ -185,9 +197,9 @@ export default function AdminOrders() {
             >
               <div className="flex justify-between items-start">
                 <div>
-                  <span className="font-mono text-xs font-bold text-slate-400 block">{order.order_number}</span>
-                  <h3 className="font-bold text-slate-900 text-sm sm:text-base mt-0.5">{order.customer_name}</h3>
-                  <span className="text-xs text-slate-500">Salesman: {order.salesman?.full_name || 'Assigned'}</span>
+                  <span className="font-mono text-xs font-bold text-slate-400 block">{order.order_number || 'N/A'}</span>
+                  <h3 className="font-bold text-slate-900 text-sm sm:text-base mt-0.5">{order.customer_name || 'Customer'}</h3>
+                  <span className="text-xs text-slate-500">Salesman: {order.salesman?.full_name || 'Field Salesman'}</span>
                 </div>
                 <OrderStatusBadge status={order.status} />
               </div>
@@ -195,7 +207,7 @@ export default function AdminOrders() {
               <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500 bg-slate-50/70 p-2.5 rounded-xl border border-slate-100">
                 <span className="flex items-center gap-1 font-mono">
                   <Phone className="w-3.5 h-3.5 text-slate-400" />
-                  {order.customer_phone}
+                  {order.customer_phone || '-'}
                 </span>
                 <span className="flex items-center gap-1">
                   <Calendar className="w-3.5 h-3.5 text-slate-400" />
@@ -203,18 +215,12 @@ export default function AdminOrders() {
                 </span>
               </div>
 
-              {order.failure_reason && (
-                <div className="p-2 bg-rose-50 border border-rose-200 rounded-lg text-rose-800 text-[11px]">
-                  <strong>Failure:</strong> {order.failure_reason}
-                </div>
-              )}
-
               {/* Action Buttons */}
               <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
                 <div>
                   <span className="text-[10px] text-slate-400 uppercase font-semibold block">Total</span>
                   <span className="font-mono font-bold text-slate-900 text-sm sm:text-base">
-                    {formatPaise(order.total_amount_paise)}
+                    {formatPaise(order.total_amount_paise || 0)}
                   </span>
                 </div>
 
@@ -236,6 +242,18 @@ export default function AdminOrders() {
                     <Printer className="w-3.5 h-3.5" />
                     <span>Bill</span>
                   </button>
+
+                  {order.status === 'PLACED' && (
+                    <button
+                      onClick={() => handleMarkDelivered(order.id)}
+                      disabled={actionLoading}
+                      className="flex items-center gap-1 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-xs"
+                      title="Mark Delivered"
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>Deliver</span>
+                    </button>
+                  )}
 
                   {order.status !== 'CANCELLED' && order.status !== 'DELIVERED' && (
                     <button
