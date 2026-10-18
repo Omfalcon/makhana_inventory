@@ -23,7 +23,7 @@ export default function BottomNav({ activeTab, onSelectTab }) {
   const salesmanNavItems = [
     { id: 'home', label: 'Home', icon: Home },
     { id: 'catalogue', label: 'Add Items', icon: PlusCircle },
-    { id: 'cart', label: 'Place Order', icon: ShoppingCart, badge: totalUnits > 0 ? totalUnits : null, highlight: totalUnits > 0 },
+    { id: 'cart', label: 'Cart', icon: ShoppingCart, badge: totalUnits > 0 ? totalUnits : null, highlight: totalUnits > 0 },
     { id: 'orders', label: 'My Orders', icon: FileText },
     { id: 'deliveries', label: 'Deliveries', icon: Truck },
   ];
