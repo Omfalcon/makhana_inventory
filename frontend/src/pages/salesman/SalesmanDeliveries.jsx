@@ -4,16 +4,13 @@ import { api } from '../../lib/api';
 import { formatPaise, formatDateTime } from '../../lib/formatters';
 import { OrderStatusBadge } from '../../components/Badge';
 import Modal from '../../components/Modal';
-import { Truck, CheckCircle2, XCircle, Phone, MapPin, AlertCircle, RefreshCw } from 'lucide-react';
+import { CheckCircle2, Phone, MapPin, RefreshCw, ShoppingBag } from 'lucide-react';
 
 export default function SalesmanDeliveries() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterTab, setFilterTab] = useState('PENDING'); // PENDING | DELIVERED | ALL
-  const [actionOrder, setActionOrder] = useState(null);
-  const [actionType, setActionType] = useState(null); // 'DELIVER' | 'FAIL' | 'OUT_FOR_DELIVERY'
-  const [failureReason, setFailureReason] = useState('Customer shop closed');
-  const [customReason, setCustomReason] = useState('');
+  const [orderToDeliver, setOrderToDeliver] = useState(null);
   const [processing, setProcessing] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -33,63 +30,42 @@ export default function SalesmanDeliveries() {
     loadDeliveries();
   }, []);
 
-  const handleUpdateStatus = async () => {
-    if (!actionOrder || !actionType) return;
-    setErrorMsg('');
-
-    let newStatus;
-    let reason = null;
-
-    if (actionType === 'OUT_FOR_DELIVERY') {
-      newStatus = 'OUT_FOR_DELIVERY';
-    } else if (actionType === 'DELIVER') {
-      newStatus = 'DELIVERED';
-    } else if (actionType === 'FAIL') {
-      newStatus = 'DELIVERY_FAILED';
-      reason = failureReason === 'Other' ? customReason.trim() : failureReason;
-      if (!reason) {
-        setErrorMsg('Please specify a valid delivery failure reason.');
-        return;
-      }
-    }
-
+  const handleConfirmDeliver = async () => {
+    if (!orderToDeliver) return;
     try {
       setProcessing(true);
-      await api.orders.updateStatus(actionOrder.id, newStatus, reason);
-      // Close modal
-      setActionOrder(null);
-      setActionType(null);
-      setCustomReason('');
-      // Reload
+      setErrorMsg('');
+      await api.orders.updateStatus(orderToDeliver.id, 'DELIVERED');
+      setOrderToDeliver(null);
       await loadDeliveries();
     } catch (err) {
-      setErrorMsg(err.message || 'Failed to update delivery status.');
+      setErrorMsg(err.message || 'Failed to mark order as delivered.');
     } finally {
       setProcessing(false);
     }
   };
 
-  // Filter list
-  const pendingOrders = orders.filter(o => o.status === 'PLACED' || o.status === 'OUT_FOR_DELIVERY');
-  const completedOrders = orders.filter(o => o.status === 'DELIVERED');
-  const failedOrders = orders.filter(o => o.status === 'DELIVERY_FAILED');
+  // Filter list: Only PLACED and DELIVERED
+  const pendingOrders = orders.filter(o => o.status === 'PLACED');
+  const deliveredOrders = orders.filter(o => o.status === 'DELIVERED');
 
   const displayedOrders = filterTab === 'PENDING'
     ? pendingOrders
     : filterTab === 'DELIVERED'
-    ? completedOrders
+    ? deliveredOrders
     : orders;
 
   return (
     <div className="space-y-4 pb-24">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-bold text-slate-900">Delivery Orders</h2>
-          <p className="text-xs text-slate-500">Day 2 Delivery Execution</p>
+          <p className="text-xs text-slate-500">Deliveries & Cash Collection</p>
         </div>
         <button
           onClick={loadDeliveries}
-          className="p-2 bg-white rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50"
+          className="p-2 bg-white rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition"
           title="Refresh"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
@@ -112,7 +88,7 @@ export default function SalesmanDeliveries() {
             filterTab === 'DELIVERED' ? 'bg-white text-slate-900 shadow-xs' : 'hover:text-slate-900'
           }`}
         >
-          Delivered ({completedOrders.length})
+          Delivered ({deliveredOrders.length})
         </button>
         <button
           onClick={() => setFilterTab('ALL')}
@@ -128,26 +104,24 @@ export default function SalesmanDeliveries() {
       {loading && orders.length === 0 ? (
         <div className="p-8 text-center text-slate-400 text-sm">Loading deliveries...</div>
       ) : displayedOrders.length === 0 ? (
-        <div className="p-8 text-center text-slate-500 bg-white rounded-xl border border-slate-200">
-          No orders in this delivery category.
+        <div className="p-8 text-center text-slate-500 bg-white rounded-2xl border border-slate-200">
+          No orders in this category.
         </div>
       ) : (
         <div className="space-y-3">
           {displayedOrders.map((order) => {
-            const isPending = order.status === 'PLACED' || order.status === 'OUT_FOR_DELIVERY';
+            const isPlaced = order.status === 'PLACED';
 
             return (
               <div
                 key={order.id}
-                className={`p-4 bg-white rounded-2xl border transition-all shadow-xs space-y-3 ${
-                  order.status === 'OUT_FOR_DELIVERY' ? 'border-blue-300 ring-1 ring-blue-100' : 'border-slate-200'
-                }`}
+                className="p-4 bg-white rounded-2xl border border-slate-200 shadow-xs space-y-3 hover:border-slate-300 transition"
               >
                 {/* Header */}
                 <div className="flex justify-between items-start">
                   <div>
-                    <span className="font-mono text-xs font-bold text-slate-400 block">{order.order_number}</span>
-                    <h3 className="font-bold text-slate-900 text-base">{order.customer_name}</h3>
+                    <span className="font-mono text-xs font-bold text-slate-400 block">{order.order_number || 'N/A'}</span>
+                    <h3 className="font-bold text-slate-900 text-base">{order.customer_name || 'Customer'}</h3>
                   </div>
                   <OrderStatusBadge status={order.status} />
                 </div>
@@ -156,82 +130,42 @@ export default function SalesmanDeliveries() {
                 <div className="space-y-1.5 text-xs text-slate-600 bg-slate-50/70 p-3 rounded-xl border border-slate-100">
                   <div className="flex items-start gap-2">
                     <MapPin className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
-                    <span className="leading-relaxed">{order.customer_address}</span>
+                    <span className="leading-relaxed">{order.customer_address || 'No address provided'}</span>
                   </div>
-                  <div className="flex items-center gap-2 pt-1">
-                    <Phone className="w-4 h-4 text-slate-400 shrink-0" />
-                    <a
-                      href={`tel:${order.customer_phone}`}
-                      className="text-brand-700 font-bold hover:underline flex items-center gap-1"
-                    >
-                      {order.customer_phone} <span className="text-[10px] bg-brand-100 px-1 rounded">Call</span>
-                    </a>
-                  </div>
+                  {order.customer_phone && (
+                    <div className="flex items-center gap-2 pt-1">
+                      <Phone className="w-4 h-4 text-slate-400 shrink-0" />
+                      <a
+                        href={`tel:${order.customer_phone}`}
+                        className="text-brand-700 font-bold hover:underline flex items-center gap-1"
+                      >
+                        {order.customer_phone} <span className="text-[10px] bg-brand-100 px-1.5 py-0.5 rounded font-semibold">Call</span>
+                      </a>
+                    </div>
+                  )}
                 </div>
 
-                {order.failure_reason && (
-                  <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs">
-                    <strong>Reported Failure:</strong> {order.failure_reason}
-                  </div>
-                )}
-
-                {/* Amount and Action Buttons */}
+                {/* Amount and Deliver Button */}
                 <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
                   <div>
-                    <span className="text-[10px] text-slate-400 block font-semibold uppercase">Collect Cash</span>
+                    <span className="text-[10px] text-slate-400 block font-semibold uppercase">
+                      {isPlaced ? 'Cash To Collect' : 'Cash Collected'}
+                    </span>
                     <span className="font-mono font-black text-slate-900 text-base">
-                      {formatPaise(order.total_amount_paise)}
+                      {formatPaise(order.total_amount_paise || 0)}
                     </span>
                   </div>
 
-                  {isPending && (
-                    <div className="flex items-center gap-2">
-                      {order.status === 'PLACED' && (
-                        <button
-                          onClick={() => {
-                            setActionOrder(order);
-                            setActionType('OUT_FOR_DELIVERY');
-                          }}
-                          className="px-3 py-2 bg-blue-50 text-blue-800 hover:bg-blue-100 font-bold text-xs rounded-xl transition flex items-center gap-1"
-                        >
-                          <Truck className="w-3.5 h-3.5" />
-                          <span>Out For Delivery</span>
-                        </button>
-                      )}
-
-                      <button
-                        onClick={() => {
-                          setActionOrder(order);
-                          setActionType('FAIL');
-                        }}
-                        className="p-2 text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-xl text-xs font-bold transition"
-                        title="Report Delivery Failed"
-                      >
-                        <XCircle className="w-4 h-4" />
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          setActionOrder(order);
-                          setActionType('DELIVER');
-                        }}
-                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition shadow-xs flex items-center gap-1.5"
-                      >
-                        <CheckCircle2 className="w-4 h-4" />
-                        <span>Delivered</span>
-                      </button>
-                    </div>
-                  )}
-
-                  {order.status === 'DELIVERY_FAILED' && (
+                  {isPlaced && (
                     <button
                       onClick={() => {
-                        setActionOrder(order);
-                        setActionType('OUT_FOR_DELIVERY');
+                        setOrderToDeliver(order);
+                        setErrorMsg('');
                       }}
-                      className="px-3 py-1.5 bg-slate-100 text-slate-800 hover:bg-slate-200 font-semibold text-xs rounded-xl"
+                      className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white font-bold text-xs rounded-xl transition shadow-xs flex items-center gap-1.5"
                     >
-                      Retry Delivery
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>Mark Delivered</span>
                     </button>
                   )}
                 </div>
@@ -241,24 +175,15 @@ export default function SalesmanDeliveries() {
         </div>
       )}
 
-      {/* Confirmation & Reason Modal */}
+      {/* Confirmation Modal */}
       <Modal
-        isOpen={Boolean(actionOrder && actionType)}
+        isOpen={Boolean(orderToDeliver)}
         onClose={() => {
-          if (!processing) {
-            setActionOrder(null);
-            setActionType(null);
-          }
+          if (!processing) setOrderToDeliver(null);
         }}
-        title={
-          actionType === 'DELIVER'
-            ? 'Confirm Successful Delivery'
-            : actionType === 'FAIL'
-            ? 'Report Failed Delivery'
-            : 'Mark Out For Delivery'
-        }
+        title="Confirm Delivery"
       >
-        {actionOrder && (
+        {orderToDeliver && (
           <div className="space-y-4">
             {errorMsg && (
               <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs">
@@ -266,72 +191,23 @@ export default function SalesmanDeliveries() {
               </div>
             )}
 
-            {actionType === 'DELIVER' && (
-              <div className="space-y-3">
-                <p className="text-sm text-slate-600">
-                  Are you sure you want to mark order <strong>{actionOrder.order_number}</strong> for{' '}
-                  <strong>{actionOrder.customer_name}</strong> as delivered?
-                </p>
-                <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-emerald-900 text-xs">
-                  Cash payment of <strong>{formatPaise(actionOrder.total_amount_paise)}</strong> received directly from customer.
-                </div>
-              </div>
-            )}
+            <p className="text-sm text-slate-600">
+              Confirm delivery for order <strong>{orderToDeliver.order_number}</strong> to{' '}
+              <strong>{orderToDeliver.customer_name}</strong>?
+            </p>
 
-            {actionType === 'OUT_FOR_DELIVERY' && (
-              <p className="text-sm text-slate-600">
-                Mark order <strong>{actionOrder.order_number}</strong> as out for delivery?
+            <div className="p-3.5 bg-emerald-50 rounded-xl border border-emerald-200 text-emerald-900 text-xs space-y-1">
+              <span className="font-bold block">Cash Payment Collection:</span>
+              <p className="text-sm font-mono font-black text-emerald-800">
+                {formatPaise(orderToDeliver.total_amount_paise)}
               </p>
-            )}
+              <p className="text-[11px] text-emerald-700">Collect this amount from the shopkeeper / customer.</p>
+            </div>
 
-            {actionType === 'FAIL' && (
-              <div className="space-y-3">
-                <p className="text-xs text-slate-600">
-                  Stock was already deducted at order placement and will NOT be deducted again. Please select the reason why delivery could not be completed:
-                </p>
-
-                <div className="space-y-2">
-                  {[
-                    'Customer shop closed',
-                    'Customer unavailable / Phone not reachable',
-                    'Customer refused delivery',
-                    'Incorrect delivery address',
-                    'Payment not ready',
-                    'Other'
-                  ].map((r) => (
-                    <label key={r} className="flex items-center gap-2 p-2 rounded-lg border border-slate-200 text-xs cursor-pointer hover:bg-slate-50">
-                      <input
-                        type="radio"
-                        name="failureReason"
-                        checked={failureReason === r}
-                        onChange={() => setFailureReason(r)}
-                        className="text-brand-600"
-                      />
-                      <span>{r}</span>
-                    </label>
-                  ))}
-
-                  {failureReason === 'Other' && (
-                    <textarea
-                      rows={2}
-                      placeholder="Please describe why delivery failed..."
-                      value={customReason}
-                      onChange={(e) => setCustomReason(e.target.value)}
-                      className="w-full p-2.5 rounded-xl border border-slate-200 text-xs mt-2"
-                    />
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Modal Actions */}
             <div className="flex gap-2 pt-2">
               <button
                 type="button"
-                onClick={() => {
-                  setActionOrder(null);
-                  setActionType(null);
-                }}
+                onClick={() => setOrderToDeliver(null)}
                 disabled={processing}
                 className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-semibold text-xs hover:bg-slate-50"
               >
@@ -339,17 +215,11 @@ export default function SalesmanDeliveries() {
               </button>
               <button
                 type="button"
-                onClick={handleUpdateStatus}
+                onClick={handleConfirmDeliver}
                 disabled={processing}
-                className={`flex-1 py-2.5 rounded-xl font-bold text-xs text-white transition ${
-                  actionType === 'DELIVER'
-                    ? 'bg-emerald-600 hover:bg-emerald-700'
-                    : actionType === 'FAIL'
-                    ? 'bg-rose-600 hover:bg-rose-700'
-                    : 'bg-blue-600 hover:bg-blue-700'
-                }`}
+                className="flex-1 py-2.5 rounded-xl font-bold text-xs text-white bg-emerald-600 hover:bg-emerald-700 transition"
               >
-                {processing ? 'Saving...' : 'Confirm'}
+                {processing ? 'Saving...' : 'Yes, Mark Delivered ✓'}
               </button>
             </div>
           </div>
