@@ -1,9 +1,12 @@
 // frontend/src/pages/salesman/SalesmanCart.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useCart } from '../../context/CartContext';
 import { api } from '../../lib/api';
 import { formatPaise } from '../../lib/formatters';
-import { Trash2, Plus, Minus, ArrowLeft, CheckCircle2, AlertCircle, ShoppingBag } from 'lucide-react';
+import { Trash2, Plus, Minus, ArrowLeft, CheckCircle2, AlertCircle, ShoppingBag, Loader2 } from 'lucide-react';
+
+// Module-level client cache for instant (0ms) autofill across carts/sessions
+const localCustomerCache = new Map();
 
 export default function SalesmanCart({ onNavigate }) {
   const {
@@ -21,12 +24,135 @@ export default function SalesmanCart({ onNavigate }) {
   const [error, setError] = useState(null);
   const [placedOrder, setPlacedOrder] = useState(null);
 
+  // Auto-fill state for phone lookup
+  const [lookupLoading, setLookupLoading] = useState(false);
+  const [lookupStatus, setLookupStatus] = useState(null); // null | 'found' | 'not_found'
+  const lastLookupPhoneRef = useRef('');
+
+  // Background prefetch recent customer contacts on mount to make lookups instant
+  useEffect(() => {
+    let mounted = true;
+    api.orders.list({ limit: 50 }).then(res => {
+      if (!mounted || !res?.orders) return;
+      res.orders.forEach(o => {
+        if (o.customer_phone) {
+          const digits = o.customer_phone.replace(/\D/g, '');
+          const data = {
+            customerName: o.customer_name || '',
+            customerPhone: o.customer_phone,
+            customerAddress: o.customer_address || '',
+            customerState: o.customer_state || 'Bihar',
+            customerStateCode: o.customer_state_code || '10',
+            customerGstin: o.customer_gstin || ''
+          };
+          localCustomerCache.set(digits, data);
+          if (digits.length >= 10) {
+            localCustomerCache.set(digits.slice(-10), data);
+          }
+        }
+      });
+    }).catch(() => {});
+    return () => { mounted = false; };
+  }, []);
+
   // Generate an idempotency key if not already generated
   const [idempotencyKey] = useState(() => `cart_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`);
 
   const handleInputChange = (field, value) => {
     setCustomerInfo(prev => ({ ...prev, [field]: value }));
   };
+
+  const handlePhoneChange = (val) => {
+    // Strictly allow only digits and max 10 numbers
+    const digitsOnly = val.replace(/\D/g, '').slice(0, 10);
+    if (digitsOnly !== lastLookupPhoneRef.current) {
+      setLookupStatus(null);
+    }
+    setCustomerInfo(prev => ({ ...prev, customerPhone: digitsOnly }));
+  };
+
+  const applyCustomer = useCallback((cust) => {
+    setCustomerInfo(prev => ({
+      ...prev,
+      customerName: cust.customerName || prev.customerName,
+      customerAddress: cust.customerAddress || prev.customerAddress,
+      customerState: cust.customerState || prev.customerState,
+      customerStateCode: cust.customerStateCode || prev.customerStateCode,
+      customerGstin: cust.customerGstin !== undefined ? cust.customerGstin : prev.customerGstin
+    }));
+    setLookupStatus('found');
+  }, [setCustomerInfo]);
+
+  const performLookup = useCallback(async (phoneToLookup, force = false) => {
+    if (!phoneToLookup) return;
+    const cleanDigits = phoneToLookup.replace(/\D/g, '');
+    if (cleanDigits.length < 10) return;
+
+    const last10 = cleanDigits.slice(-10);
+
+    // Check instant client cache (0ms)
+    if (localCustomerCache.has(cleanDigits) || localCustomerCache.has(last10)) {
+      const cached = localCustomerCache.get(cleanDigits) || localCustomerCache.get(last10);
+      lastLookupPhoneRef.current = cleanDigits;
+      applyCustomer(cached);
+      setLookupLoading(false);
+      return;
+    }
+
+    if (!force && lastLookupPhoneRef.current === cleanDigits) {
+      return;
+    }
+
+    try {
+      setLookupLoading(true);
+      lastLookupPhoneRef.current = cleanDigits;
+      const res = await api.orders.lookupCustomer(cleanDigits);
+
+      if (res && res.found && res.customer) {
+        // Cache locally for instant subsequent lookups
+        localCustomerCache.set(cleanDigits, res.customer);
+        localCustomerCache.set(last10, res.customer);
+        applyCustomer(res.customer);
+      } else {
+        setLookupStatus('not_found');
+      }
+    } catch (err) {
+      console.warn('Customer lookup error:', err);
+      setLookupStatus(null);
+    } finally {
+      setLookupLoading(false);
+    }
+  }, [applyCustomer]);
+
+  // Instant or ultra-responsive auto-lookup when phone changes
+  useEffect(() => {
+    const rawPhone = customerInfo.customerPhone || '';
+    const cleanDigits = rawPhone.replace(/\D/g, '');
+
+    if (cleanDigits !== lastLookupPhoneRef.current) {
+      setLookupStatus(null);
+    }
+
+    if (cleanDigits.length < 10) {
+      return;
+    }
+
+    const last10 = cleanDigits.slice(-10);
+
+    // Instant cache hit: 0ms
+    if (localCustomerCache.has(cleanDigits) || localCustomerCache.has(last10)) {
+      const cached = localCustomerCache.get(cleanDigits) || localCustomerCache.get(last10);
+      lastLookupPhoneRef.current = cleanDigits;
+      applyCustomer(cached);
+      return;
+    }
+
+    // Fast 120ms debounce for fresh server query so typing is smooth and response is swift
+    const timer = setTimeout(() => {
+      performLookup(rawPhone);
+    }, 120);
+    return () => clearTimeout(timer);
+  }, [customerInfo.customerPhone, performLookup, applyCustomer]);
 
   const handlePlaceOrder = async (e) => {
     e.preventDefault();
@@ -234,6 +360,46 @@ export default function SalesmanCart({ onNavigate }) {
           Customer & Delivery Details
         </h3>
 
+        {/* 1. Customer Phone Number (FIRST FIELD) */}
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <label className="block text-xs font-bold text-slate-700 uppercase">
+              Customer Phone Number *
+            </label>
+            {lookupLoading && (
+              <span className="text-xs text-slate-400 flex items-center gap-1 font-medium">
+                <Loader2 className="w-3 h-3 animate-spin text-brand-600" />
+                Checking...
+              </span>
+            )}
+            {!lookupLoading && lookupStatus === 'found' && (
+              <span className="text-xs font-semibold text-emerald-600 flex items-center gap-1">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                Customer exists
+              </span>
+            )}
+            {!lookupLoading && lookupStatus === 'not_found' && customerInfo.customerPhone.length === 10 && (
+              <span className="text-xs font-semibold text-blue-600 flex items-center gap-1">
+                New customer
+              </span>
+            )}
+          </div>
+          <div className="relative">
+            <input
+              type="tel"
+              inputMode="numeric"
+              maxLength={10}
+              required
+              placeholder="10-digit mobile number"
+              value={customerInfo.customerPhone}
+              onChange={(e) => handlePhoneChange(e.target.value)}
+              onBlur={() => performLookup(customerInfo.customerPhone)}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-brand-600 focus:outline-none"
+            />
+          </div>
+        </div>
+
+        {/* 2. Customer / Shop Name */}
         <div>
           <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
             Customer / Shop Name *
@@ -248,20 +414,7 @@ export default function SalesmanCart({ onNavigate }) {
           />
         </div>
 
-        <div>
-          <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-            Customer Phone Number *
-          </label>
-          <input
-            type="tel"
-            required
-            placeholder="e.g. 9876543210"
-            value={customerInfo.customerPhone}
-            onChange={(e) => handleInputChange('customerPhone', e.target.value)}
-            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-brand-600 focus:outline-none"
-          />
-        </div>
-
+        {/* 3. Delivery Address */}
         <div>
           <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
             Full Delivery Address *
@@ -276,40 +429,18 @@ export default function SalesmanCart({ onNavigate }) {
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-              Place of Supply (State)
-            </label>
-            <select
-              value={customerInfo.customerState}
-              onChange={(e) => {
-                const state = e.target.value;
-                const stateCode = state === 'Bihar' ? '10' : state === 'Jharkhand' ? '20' : state === 'West Bengal' ? '19' : '00';
-                handleInputChange('customerState', state);
-                handleInputChange('customerStateCode', stateCode);
-              }}
-              className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm bg-white"
-            >
-              <option value="Bihar">Bihar (10)</option>
-              <option value="Jharkhand">Jharkhand (20)</option>
-              <option value="West Bengal">West Bengal (19)</option>
-              <option value="Other">Other State</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-              Customer GSTIN (Optional)
-            </label>
-            <input
-              type="text"
-              placeholder="e.g. 10AAAAA0000A1Z5"
-              value={customerInfo.customerGstin}
-              onChange={(e) => handleInputChange('customerGstin', e.target.value)}
-              className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm font-mono uppercase"
-            />
-          </div>
+        {/* 4. Customer GSTIN (Optional) */}
+        <div>
+          <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+            Customer GSTIN (Optional)
+          </label>
+          <input
+            type="text"
+            placeholder="e.g. 10AAAAA0000A1Z5"
+            value={customerInfo.customerGstin}
+            onChange={(e) => handleInputChange('customerGstin', e.target.value)}
+            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-mono uppercase focus:ring-2 focus:ring-brand-600 focus:outline-none"
+          />
         </div>
 
         {/* Submit Button */}

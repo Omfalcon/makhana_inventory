@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../lib/api';
 import { useCart } from '../../context/CartContext';
+import { useWebSocketEvent } from '../../context/WebSocketContext';
 import { formatPaise } from '../../lib/formatters';
 import { StockStatusBadge } from '../../components/Badge';
 import { Search, Plus, Minus, ShoppingBag, ArrowRight } from 'lucide-react';
@@ -29,6 +30,13 @@ export default function SalesmanCatalogue({ onNavigate }) {
   useEffect(() => {
     loadCatalogue();
   }, []);
+
+  // Realtime live sync for stock changes
+  useWebSocketEvent('STOCK_UPDATED', () => loadCatalogue());
+  useWebSocketEvent('STOCK_DEDUCTED', () => loadCatalogue());
+  useWebSocketEvent('STOCK_RESTORED', () => loadCatalogue());
+  useWebSocketEvent('PRODUCT_CREATED', () => loadCatalogue());
+  useWebSocketEvent('PRODUCT_UPDATED', () => loadCatalogue());
 
   const filteredProducts = products.filter(p => {
     const q = search.toLowerCase();

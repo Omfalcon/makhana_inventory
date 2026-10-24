@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../../lib/api';
 import { formatPaise, formatDateTime } from '../../lib/formatters';
 import { OrderStatusBadge } from '../../components/Badge';
+import { useWebSocketEvent } from '../../context/WebSocketContext';
 import Modal from '../../components/Modal';
 import { CheckCircle2, Phone, MapPin, RefreshCw, ShoppingBag } from 'lucide-react';
 
@@ -29,6 +30,11 @@ export default function SalesmanDeliveries() {
   useEffect(() => {
     loadDeliveries();
   }, []);
+
+  // Realtime live sync for deliveries
+  useWebSocketEvent('ORDER_CREATED', () => loadDeliveries());
+  useWebSocketEvent('ORDER_STATUS_CHANGED', () => loadDeliveries());
+  useWebSocketEvent('ORDER_CANCELLED', () => loadDeliveries());
 
   const handleConfirmDeliver = async () => {
     if (!orderToDeliver) return;

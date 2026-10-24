@@ -2,42 +2,22 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../lib/api';
-import { formatPaise, formatTime } from '../../lib/formatters';
+import { formatPaise } from '../../lib/formatters';
 import { OrderStatusBadge } from '../../components/Badge';
-import { PlusCircle, Truck, FileText, CheckCircle2, AlertCircle, Phone, MapPin } from 'lucide-react';
+import { useWebSocketEvent } from '../../context/WebSocketContext';
+import { PlusCircle, Truck, CheckCircle2, MapPin } from 'lucide-react';
 
 export default function SalesmanHome({ onNavigate }) {
   const { profile } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [todayOrders, setTodayOrders] = useState([]);
-  const [stats, setStats] = useState({
-    placed: 0,
-    delivered: 0,
-    deliveredRevenuePaise: 0
-  });
+  const [orders, setOrders] = useState([]);
+  const [timeRange, setTimeRange] = useState('all'); // 'all' | 'today'
 
   const loadData = async () => {
     try {
       setLoading(true);
-      const res = await api.orders.list({ limit: 50 });
-      const orders = res.orders || [];
-
-      // Filter today's orders
-      const today = new Date().toISOString().substring(0, 10);
-      const todayList = orders.filter(o => o.created_at.startsWith(today));
-      setTodayOrders(todayList);
-
-      const placed = todayList.filter(o => o.status === 'PLACED').length;
-      const delivered = todayList.filter(o => o.status === 'DELIVERED').length;
-      const deliveredRevenue = todayList
-        .filter(o => o.status === 'DELIVERED')
-        .reduce((sum, o) => sum + o.total_amount_paise, 0);
-
-      setStats({
-        placed,
-        delivered,
-        deliveredRevenuePaise: deliveredRevenue
-      });
+      const res = await api.orders.list({ limit: 100 });
+      setOrders(res.orders || []);
     } catch (err) {
       console.error('Error loading salesman home data:', err);
     } finally {
@@ -48,6 +28,41 @@ export default function SalesmanHome({ onNavigate }) {
   useEffect(() => {
     loadData();
   }, []);
+
+  // Realtime WebSocket listeners to keep KPI counters up to date
+  useWebSocketEvent('ORDER_CREATED', () => loadData());
+  useWebSocketEvent('ORDER_STATUS_CHANGED', () => loadData());
+  useWebSocketEvent('ORDER_CANCELLED', () => loadData());
+
+  const isToday = (isoString) => {
+    if (!isoString) return false;
+    try {
+      const d = new Date(isoString);
+      const now = new Date();
+      return (
+        d.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' }) ===
+        now.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })
+      );
+    } catch (e) {
+      return false;
+    }
+  };
+
+  // KPI Calculations
+  const filteredOrders = timeRange === 'today'
+    ? orders.filter(o => isToday(o.delivered_at || o.created_at))
+    : orders;
+
+  const placedCount = timeRange === 'today'
+    ? orders.filter(o => o.status === 'PLACED' && isToday(o.created_at)).length
+    : orders.filter(o => o.status === 'PLACED').length;
+
+  const deliveredOrders = filteredOrders.filter(o => o.status === 'DELIVERED');
+  const deliveredCount = deliveredOrders.length;
+  const deliveredRevenue = deliveredOrders.reduce((sum, o) => sum + (o.total_amount_paise || 0), 0);
+
+  // All currently pending deliveries for the salesman (independent of placement date)
+  const pendingDeliveries = orders.filter(o => o.status === 'PLACED');
 
   return (
     <div className="space-y-5 pb-20">
@@ -78,28 +93,51 @@ export default function SalesmanHome({ onNavigate }) {
         </div>
       </div>
 
-      {/* Today's KPI Counters */}
+      {/* KPI Counters with Time Filter */}
       <div>
-        <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-2.5">Today's Progress</h3>
+        <div className="flex items-center justify-between mb-2.5">
+          <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+            {timeRange === 'today' ? "Today's Progress" : "Orders Overview"}
+          </h3>
+          <div className="flex bg-slate-200/70 p-0.5 rounded-lg text-xs font-semibold text-slate-600">
+            <button
+              onClick={() => setTimeRange('all')}
+              className={`px-2.5 py-1 rounded-md transition ${
+                timeRange === 'all' ? 'bg-white text-slate-900 shadow-xs font-bold' : 'hover:text-slate-900'
+              }`}
+            >
+              All Time
+            </button>
+            <button
+              onClick={() => setTimeRange('today')}
+              className={`px-2.5 py-1 rounded-md transition ${
+                timeRange === 'today' ? 'bg-white text-slate-900 shadow-xs font-bold' : 'hover:text-slate-900'
+              }`}
+            >
+              Today
+            </button>
+          </div>
+        </div>
+
         <div className="grid grid-cols-3 gap-3">
           <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
             <span className="text-xs text-slate-500 font-semibold block">Placed Orders</span>
-            <span className="text-2xl font-black text-amber-600 mt-1 block">{stats.placed}</span>
+            <span className="text-2xl font-black text-amber-600 mt-1 block">{placedCount}</span>
           </div>
           <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
             <span className="text-xs text-slate-500 font-semibold block">Delivered Orders</span>
-            <span className="text-2xl font-black text-emerald-600 mt-1 block">{stats.delivered}</span>
+            <span className="text-2xl font-black text-emerald-600 mt-1 block">{deliveredCount}</span>
           </div>
           <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
             <span className="text-xs text-slate-500 font-semibold block">Delivered Cash</span>
             <span className="text-base sm:text-xl font-black text-slate-900 mt-1 block truncate">
-              {formatPaise(stats.deliveredRevenuePaise, false)}
+              {formatPaise(deliveredRevenue, false)}
             </span>
           </div>
         </div>
       </div>
 
-      {/* Urgent Pending Deliveries */}
+      {/* Pending Deliveries */}
       <div>
         <div className="flex items-center justify-between mb-2.5">
           <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Pending Deliveries</h3>
@@ -115,15 +153,14 @@ export default function SalesmanHome({ onNavigate }) {
           <div className="bg-white p-8 rounded-xl border border-slate-200 text-center text-sm text-slate-400">
             Loading deliveries...
           </div>
-        ) : todayOrders.filter(o => o.status === 'PLACED').length === 0 ? (
+        ) : pendingDeliveries.length === 0 ? (
           <div className="bg-white p-6 rounded-xl border border-slate-200 text-center text-slate-500 text-sm">
             <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
-            No pending deliveries for today!
+            No pending deliveries right now!
           </div>
         ) : (
           <div className="space-y-2.5">
-            {todayOrders
-              .filter(o => o.status === 'PLACED')
+            {pendingDeliveries
               .slice(0, 3)
               .map(order => (
                 <div key={order.id} className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col gap-2">
