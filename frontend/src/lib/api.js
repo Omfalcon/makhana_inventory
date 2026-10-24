@@ -48,6 +48,22 @@ export const api = {
     toggleSalesmanStatus: (id, isActive) => fetchWithAuth(`/auth/salesman/${id}/status`, {
       method: 'PATCH',
       body: JSON.stringify({ is_active: isActive })
+    }),
+    changeSalesmanPassword: (id, password) => fetchWithAuth(`/auth/salesman/${id}/password`, {
+      method: 'PATCH',
+      body: JSON.stringify({ password })
+    }),
+    updateSalesman: (id, payload) => fetchWithAuth(`/auth/salesman/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload)
+    }),
+    resolveSalesmanPhone: (phone) => fetchWithAuth('/auth/resolve-salesman-phone', {
+      method: 'POST',
+      body: JSON.stringify({ phone })
+    }),
+    resetPassword: (identifier, newPassword) => fetchWithAuth('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ identifier, newPassword })
     })
   },
 
@@ -72,7 +88,39 @@ export const api = {
     cancel: (id, reason, restock = true) => fetchWithAuth(`/orders/${id}/cancel`, {
       method: 'POST',
       body: JSON.stringify({ reason, restock })
-    })
+    }),
+    lookupCustomer: async (phone) => {
+      try {
+        const res = await fetchWithAuth(`/orders/customer-lookup?phone=${encodeURIComponent(phone)}`);
+        return res;
+      } catch (err) {
+        // Fallback: If 404 (e.g. server hasn't been restarted), search via /orders?search=
+        if (err.status === 404) {
+          try {
+            const listRes = await fetchWithAuth(`/orders?search=${encodeURIComponent(phone)}&limit=1`);
+            if (listRes?.orders && listRes.orders.length > 0) {
+              const o = listRes.orders[0];
+              return {
+                success: true,
+                found: true,
+                customer: {
+                  customerName: o.customer_name || '',
+                  customerPhone: o.customer_phone || phone,
+                  customerAddress: o.customer_address || '',
+                  customerState: o.customer_state || 'Bihar',
+                  customerStateCode: o.customer_state_code || '10',
+                  customerGstin: o.customer_gstin || ''
+                }
+              };
+            }
+          } catch {
+            // ignore
+          }
+          return { success: true, found: false, customer: null };
+        }
+        throw err;
+      }
+    }
   },
 
   // Inventory
@@ -90,7 +138,7 @@ export const api = {
       method: 'PUT',
       body: JSON.stringify(payload)
     }),
-    getMovements: (productId) => fetchWithAuth(`/inventory/movements${productId ? `?productId=${productId}` : ''}`)
+    getMovements: (productId, limit = 200) => fetchWithAuth(`/inventory/movements?limit=${limit}${productId ? `&productId=${productId}` : ''}`)
   },
 
   // Settings

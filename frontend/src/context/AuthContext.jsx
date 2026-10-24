@@ -5,93 +5,170 @@ import { api } from '../lib/api';
 
 const AuthContext = createContext(null);
 
+// Instant cache helpers to eliminate white screen/loading delays on refresh
+const getStored = (key) => {
+  try {
+    const val = localStorage.getItem(key);
+    return val ? JSON.parse(val) : null;
+  } catch (e) {
+    return null;
+  }
+};
+
+let inFlightProfilePromise = null;
+
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(() => getStored('makhana_cached_user'));
+  const [profile, setProfile] = useState(() => getStored('makhana_cached_profile'));
+  // If we already have a cached profile, we render immediately without blocking with full-screen spinner
+  const [loading, setLoading] = useState(() => !getStored('makhana_cached_profile'));
   const [authError, setAuthError] = useState(null);
 
-  // Load user profile from API or directly from DB
-  const loadProfile = async (currentUser) => {
-    try {
-      if (!currentUser) {
-        setProfile(null);
-        return;
-      }
-
-      // Try fetching profile via backend API
-      const res = await api.auth.getMe();
-      if (res && res.profile) {
-        setProfile(res.profile);
-        setAuthError(null);
-      }
-    } catch (err) {
-      console.warn('Could not fetch profile via API, querying supabase table directly:', err.message);
-      // Fallback direct supabase query
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', currentUser.id)
-        .single();
-
-      if (error || !data) {
-        setAuthError('Profile not found. Please contact administrator.');
-        setProfile(null);
-      } else {
-        if (!data.is_active) {
-          setAuthError('Your account has been deactivated.');
-          setProfile(null);
-          await supabase.auth.signOut();
-        } else {
-          setProfile(data);
-          setAuthError(null);
-        }
-      }
+  // Sync profile cache
+  const updateProfile = (newProfile) => {
+    setProfile(newProfile);
+    if (newProfile) {
+      try {
+        localStorage.setItem('makhana_cached_profile', JSON.stringify(newProfile));
+      } catch (e) {}
+    } else {
+      localStorage.removeItem('makhana_cached_profile');
     }
   };
 
+  const updateUser = (newUser) => {
+    setUser(newUser);
+    if (newUser) {
+      try {
+        localStorage.setItem('makhana_cached_user', JSON.stringify({ id: newUser.id, email: newUser.email }));
+      } catch (e) {}
+    } else {
+      localStorage.removeItem('makhana_cached_user');
+    }
+  };
+
+  // Deduplicated profile loader
+  const loadProfile = async (currentUser) => {
+    if (!currentUser) {
+      updateProfile(null);
+      return;
+    }
+
+    if (inFlightProfilePromise) {
+      return inFlightProfilePromise;
+    }
+
+    inFlightProfilePromise = (async () => {
+      try {
+        // Try fetching profile via backend API
+        const res = await api.auth.getMe();
+        if (res && res.profile) {
+          updateProfile(res.profile);
+          setAuthError(null);
+          return res.profile;
+        }
+      } catch (err) {
+        console.warn('Could not fetch profile via API, querying supabase table directly:', err.message);
+        // Fallback direct supabase query
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', currentUser.id)
+          .single();
+
+        if (error || !data) {
+          setAuthError('Profile not found. Please contact administrator.');
+          updateProfile(null);
+        } else {
+          if (!data.is_active) {
+            setAuthError('Your account has been deactivated.');
+            updateProfile(null);
+            await supabase.auth.signOut();
+          } else {
+            updateProfile(data);
+            setAuthError(null);
+            return data;
+          }
+        }
+      } finally {
+        inFlightProfilePromise = null;
+      }
+    })();
+
+    return inFlightProfilePromise;
+  };
+
   useEffect(() => {
+    let mounted = true;
+
     // 1. Initial session check
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return;
       const currentUser = session?.user || null;
-      setUser(currentUser);
+      updateUser(currentUser);
       if (currentUser) {
-        loadProfile(currentUser).finally(() => setLoading(false));
+        loadProfile(currentUser).finally(() => {
+          if (mounted) setLoading(false);
+        });
       } else {
+        updateProfile(null);
         setLoading(false);
       }
     });
 
-    // 2. Auth state change listener
+    // 2. Auth state change listener (skip redundant duplicate call on initial load)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return;
+      if (event === 'INITIAL_SESSION') return; // Handled above
+
       const currentUser = session?.user || null;
-      setUser(currentUser);
+      updateUser(currentUser);
       if (currentUser) {
         await loadProfile(currentUser);
       } else {
-        setProfile(null);
+        updateProfile(null);
       }
       setLoading(false);
     });
 
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
   }, []);
 
-  const login = async (email, password) => {
+  const login = async (identifier, password, roleHint = null) => {
     setAuthError(null);
+    const cleanId = String(identifier || '').trim();
+    let emailToAuth = cleanId.toLowerCase();
+
+    // If identifier is NOT an email (has no @), resolve mobile number to auth email
+    if (!cleanId.includes('@')) {
+      const res = await api.auth.resolveSalesmanPhone(cleanId);
+      if (!res.success || !res.email) {
+        throw new Error(res.message || 'No account registered with this mobile number.');
+      }
+      emailToAuth = res.email;
+    }
+
     const { data, error } = await supabase.auth.signInWithPassword({
-      email: email.trim().toLowerCase(),
-      password
+      email: emailToAuth,
+      password: password ? password.trim() : ''
     });
 
     if (error) {
+      if (error.message?.toLowerCase().includes('invalid login credentials')) {
+        throw new Error(
+          cleanId.includes('@')
+            ? 'Incorrect email or password. Please verify and try again.'
+            : 'Incorrect mobile number or password. Please verify and try again.'
+        );
+      }
       throw error;
     }
 
     if (data.user) {
-      setUser(data.user);
+      updateUser(data.user);
       await loadProfile(data.user);
     }
     return data;
@@ -101,8 +178,8 @@ export function AuthProvider({ children }) {
     try {
       await supabase.auth.signOut();
     } finally {
-      setUser(null);
-      setProfile(null);
+      updateUser(null);
+      updateProfile(null);
       setAuthError(null);
     }
   };
