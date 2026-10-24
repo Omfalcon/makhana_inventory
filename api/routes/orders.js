@@ -3,6 +3,11 @@ const express = require('express');
 const router = express.Router();
 const { authenticate, requireRole } = require('../middleware/auth');
 const { supabaseAdmin } = require('../utils/supabase');
+const { broadcast } = require('../utils/websocket');
+
+// High-speed In-Memory Customer Cache (0ms response time)
+const customerCache = new Map();
+const CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
 
 // POST /api/orders/place
 // Atomically places an order and deducts inventory
@@ -70,6 +75,37 @@ router.post('/place', authenticate, async (req, res) => {
             });
         }
 
+        if (customerPhone) {
+            const cleanDigits = customerPhone.replace(/\D/g, '');
+            const custObj = {
+                customerName: customerName.trim(),
+                customerPhone: customerPhone.trim(),
+                customerAddress: customerAddress.trim(),
+                customerState: customerState ? customerState.trim() : 'Bihar',
+                customerStateCode: customerStateCode ? customerStateCode.trim() : '10',
+                customerGstin: customerGstin ? customerGstin.trim().toUpperCase() : ''
+            };
+            customerCache.set(cleanDigits, { data: custObj, timestamp: Date.now() });
+            if (cleanDigits.length >= 10) {
+                customerCache.set(cleanDigits.slice(-10), { data: custObj, timestamp: Date.now() });
+            }
+        }
+
+        // Realtime WebSocket broadcast to Admin & Salesmen
+        broadcast('ORDER_CREATED', {
+            order: data,
+            salesman: {
+                id: req.profile.id,
+                full_name: req.profile.full_name
+            },
+            customer_name: customerName.trim(),
+            total_amount_paise: data.total_amount_paise
+        });
+        broadcast('STOCK_UPDATED', {
+            items: sanitizedItems,
+            reason: `Order placed: ${data.order_number}`
+        });
+
         return res.status(201).json({
             success: true,
             order: data
@@ -130,6 +166,94 @@ router.get('/', authenticate, async (req, res) => {
 
         return res.json({ orders });
     } catch (err) {
+        return res.status(500).json({ error: err.message });
+    }
+});
+
+// GET /api/orders/customer-lookup
+// Looks up the most recent customer info by phone number across all orders (cached in-memory for 0ms response)
+router.get('/customer-lookup', authenticate, async (req, res) => {
+    try {
+        const { phone } = req.query;
+
+        if (!phone || typeof phone !== 'string') {
+            return res.status(400).json({ error: 'Phone query parameter is required.' });
+        }
+
+        const trimmed = phone.trim();
+        const digits = trimmed.replace(/\D/g, '');
+
+        if (digits.length < 5) {
+            return res.json({ success: true, found: false, customer: null });
+        }
+
+        const last10 = digits.length >= 10 ? digits.slice(-10) : digits;
+
+        // 1. Fast in-memory cache check (0ms response)
+        const cached = customerCache.get(digits) || customerCache.get(last10) || customerCache.get(trimmed);
+        if (cached && (Date.now() - cached.timestamp < CACHE_TTL_MS)) {
+            return res.json({
+                success: true,
+                found: true,
+                fromCache: true,
+                customer: cached.data
+            });
+        }
+
+        // 2. Query Supabase: Try exact match first (much faster than wildcard ILIKE)
+        let { data, error } = await supabaseAdmin
+            .from('orders')
+            .select('customer_name, customer_phone, customer_address, customer_state, customer_state_code, customer_gstin, created_at')
+            .eq('customer_phone', trimmed)
+            .order('created_at', { ascending: false })
+            .limit(1);
+
+        // 3. If exact match not found, fallback to wildcard match on last 10 digits
+        if (!error && (!data || data.length === 0) && digits.length >= 10) {
+            const fallback = await supabaseAdmin
+                .from('orders')
+                .select('customer_name, customer_phone, customer_address, customer_state, customer_state_code, customer_gstin, created_at')
+                .ilike('customer_phone', `%${last10}%`)
+                .order('created_at', { ascending: false })
+                .limit(1);
+            if (!fallback.error && fallback.data && fallback.data.length > 0) {
+                data = fallback.data;
+            }
+        }
+
+        if (error) {
+            console.error('Customer lookup error:', error);
+            return res.status(500).json({ error: error.message });
+        }
+
+        if (!data || data.length === 0) {
+            return res.json({ success: true, found: false, customer: null });
+        }
+
+        const match = data[0];
+        const customerData = {
+            customerName: match.customer_name || '',
+            customerPhone: match.customer_phone || trimmed,
+            customerAddress: match.customer_address || '',
+            customerState: match.customer_state || 'Bihar',
+            customerStateCode: match.customer_state_code || '10',
+            customerGstin: match.customer_gstin || ''
+        };
+
+        // Cache result for 0ms subsequent queries
+        customerCache.set(digits, { data: customerData, timestamp: Date.now() });
+        customerCache.set(trimmed, { data: customerData, timestamp: Date.now() });
+        if (digits.length >= 10) {
+            customerCache.set(last10, { data: customerData, timestamp: Date.now() });
+        }
+
+        return res.json({
+            success: true,
+            found: true,
+            customer: customerData
+        });
+    } catch (err) {
+        console.error('Customer lookup unhandled error:', err);
         return res.status(500).json({ error: err.message });
     }
 });
@@ -236,6 +360,20 @@ router.patch('/:id/status', authenticate, async (req, res) => {
             reason: failureReason || `Status updated to ${newStatus}`
         });
 
+        // Realtime WebSocket broadcast status update
+        broadcast('ORDER_STATUS_CHANGED', {
+            order_id: id,
+            status: newStatus,
+            previous_status: order.status,
+            order_number: order.order_number,
+            customer_name: order.customer_name,
+            salesman_id: order.salesman_id,
+            actor: {
+                id: req.profile.id,
+                full_name: req.profile.full_name
+            }
+        });
+
         return res.json({
             success: true,
             order: updatedOrder
@@ -270,6 +408,23 @@ router.post('/:id/cancel', authenticate, requireRole('ADMIN'), async (req, res) 
             return res.status(400).json({
                 error: 'Cancellation Failed',
                 message: error.message
+            });
+        }
+
+        // Realtime WebSocket broadcast cancellation and restock
+        broadcast('ORDER_CANCELLED', {
+            order_id: id,
+            reason: reason.trim(),
+            restocked: Boolean(restock),
+            admin: {
+                id: req.profile.id,
+                full_name: req.profile.full_name
+            }
+        });
+        if (restock) {
+            broadcast('STOCK_RESTORED', {
+                order_id: id,
+                reason: `Cancelled order: ${reason.trim()}`
             });
         }
 

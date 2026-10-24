@@ -3,6 +3,7 @@ const express = require('express');
 const router = express.Router();
 const { authenticate, requireRole } = require('../middleware/auth');
 const { supabaseAdmin } = require('../utils/supabase');
+const { broadcast } = require('../utils/websocket');
 
 // GET /api/inventory/products
 // Returns products: active products for salesman; all products for admin
@@ -63,6 +64,15 @@ router.post('/adjust', authenticate, requireRole('ADMIN'), async (req, res) => {
                 message: error.message
             });
         }
+
+        // Realtime WebSocket broadcast to all connected Admin and Salesmen
+        broadcast('STOCK_UPDATED', {
+            product_id: productId,
+            quantity_change: qtyChange,
+            reason: reason.trim(),
+            result: data,
+            actor: req.profile.full_name
+        });
 
         return res.json({
             success: true,
@@ -130,6 +140,9 @@ router.post('/product', authenticate, requireRole('ADMIN'), async (req, res) => 
             return res.status(400).json({ error: error.message });
         }
 
+        // Realtime WebSocket broadcast
+        broadcast('PRODUCT_CREATED', { product });
+
         return res.status(201).json({
             success: true,
             message: 'Product created successfully.',
@@ -177,6 +190,9 @@ router.put('/product/:id', authenticate, requireRole('ADMIN'), async (req, res) 
         if (error) {
             return res.status(400).json({ error: error.message });
         }
+
+        // Realtime WebSocket broadcast
+        broadcast('PRODUCT_UPDATED', { product });
 
         return res.json({
             success: true,
