@@ -30,3 +30,4 @@ frontend/.env
 *.njsproj
 *.sln
 *.sw?
+scratch_*.js
