@@ -286,13 +286,13 @@ router.post('/resolve-salesman-phone', async (req, res) => {
         });
     } catch (err) {
         console.error('Error resolving phone:', err);
-        return res.status(500).json({ success: false, message: err.message });
+        return res.status(500).json({ success: false, message: 'Unable to resolve phone number. Please try again.' });
     }
 });
 
-// POST /api/auth/reset-password (Public)
-// Secure password reset utility for development and management
-router.post('/reset-password', async (req, res) => {
+// POST /api/auth/reset-password (Admin only)
+// Secure password reset utility
+router.post('/reset-password', authenticate, requireRole('ADMIN'), async (req, res) => {
     try {
         const { identifier, newPassword } = req.body;
 
@@ -341,11 +341,11 @@ router.post('/reset-password', async (req, res) => {
 
         return res.json({
             success: true,
-            message: 'Password updated successfully! You can now log in.'
+            message: 'Password updated successfully!'
         });
     } catch (err) {
         console.error('Error in reset-password:', err);
-        return res.status(500).json({ success: false, message: err.message });
+        return res.status(500).json({ success: false, message: 'Failed to reset password. Please try again.' });
     }
 });
 
