@@ -1,8 +1,10 @@
 // api/index.js
 const express = require('express');
+const http = require('http');
 const cors = require('cors');
 require('dotenv').config();
 
+const { initWebSocket } = require('./utils/websocket');
 const authRoutes = require('./routes/auth');
 const ordersRoutes = require('./routes/orders');
 const inventoryRoutes = require('./routes/inventory');
@@ -11,6 +13,10 @@ const invoicesRoutes = require('./routes/invoices');
 const analyticsRoutes = require('./routes/analytics');
 
 const app = express();
+const server = http.createServer(app);
+
+// Attach WebSocket Server
+initWebSocket(server);
 
 // Middlewares
 app.use(cors({
@@ -58,7 +64,7 @@ app.use((err, req, res, next) => {
 // Local Development Server Listener
 if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
     const PORT = process.env.PORT || 5000;
-    app.listen(PORT, () => {
+    server.listen(PORT, () => {
         console.log(`🚀 Makhana Express API server running on http://localhost:${PORT}`);
     });
 }
