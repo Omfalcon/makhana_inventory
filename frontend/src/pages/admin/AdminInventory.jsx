@@ -4,6 +4,7 @@ import { api } from '../../lib/api';
 import { formatPaise, formatDateTime } from '../../lib/formatters';
 import { StockStatusBadge } from '../../components/Badge';
 import Modal from '../../components/Modal';
+import { useWebSocketEvent } from '../../context/WebSocketContext';
 import {
   Boxes,
   Plus,
@@ -14,7 +15,13 @@ import {
   CheckCircle2,
   TrendingDown,
   TrendingUp,
-  RefreshCw
+  RefreshCw,
+  ArrowUpRight,
+  ArrowDownRight,
+  PackagePlus,
+  ShoppingBag,
+  ArrowRight,
+  Filter
 } from 'lucide-react';
 
 export default function AdminInventory() {
@@ -42,6 +49,7 @@ export default function AdminInventory() {
   const [showMovementsModal, setShowMovementsModal] = useState(false);
   const [movements, setMovements] = useState([]);
   const [movementsLoading, setMovementsLoading] = useState(false);
+  const [movementTab, setMovementTab] = useState('ALL'); // 'ALL' | 'ADDED' | 'SOLD'
 
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -61,6 +69,14 @@ export default function AdminInventory() {
   useEffect(() => {
     loadProducts();
   }, []);
+
+  // Realtime updates via WebSocket
+  useWebSocketEvent('STOCK_UPDATED', () => loadProducts());
+  useWebSocketEvent('STOCK_DEDUCTED', () => loadProducts());
+  useWebSocketEvent('STOCK_RESTORED', () => loadProducts());
+  useWebSocketEvent('PRODUCT_CREATED', () => loadProducts());
+  useWebSocketEvent('PRODUCT_UPDATED', () => loadProducts());
+  useWebSocketEvent('ORDER_CREATED', () => loadProducts());
 
   const handleAdjustStock = async (e) => {
     e.preventDefault();
@@ -160,16 +176,26 @@ export default function AdminInventory() {
 
   const openMovements = async (productId = null) => {
     try {
+      setMovementTab('ALL');
       setShowMovementsModal(true);
       setMovementsLoading(true);
       const res = await api.inventory.getMovements(productId);
       setMovements(res.movements || []);
     } catch (err) {
-      alert('Failed to load stock movements audit');
+      console.error('Failed to load stock movements audit:', err);
     } finally {
       setMovementsLoading(false);
     }
   };
+
+  const addedCount = movements.filter((m) => (m.quantity_change || 0) > 0).length;
+  const soldCount = movements.filter((m) => (m.quantity_change || 0) < 0).length;
+
+  const displayedMovements = movements.filter((m) => {
+    if (movementTab === 'ADDED') return (m.quantity_change || 0) > 0;
+    if (movementTab === 'SOLD') return (m.quantity_change || 0) < 0;
+    return true;
+  });
 
   const filteredProducts = products.filter(p => {
     const q = search.toLowerCase();
@@ -602,38 +628,101 @@ export default function AdminInventory() {
         maxWidth="max-w-2xl"
       >
         <div className="space-y-3">
+          {/* Simple Tab Filter: All | Added | Sales */}
+          <div className="flex bg-slate-100 p-1 rounded-xl gap-1">
+            <button
+              type="button"
+              onClick={() => setMovementTab('ALL')}
+              className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition ${
+                movementTab === 'ALL'
+                  ? 'bg-white text-slate-900 shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              All ({movements.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setMovementTab('ADDED')}
+              className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                movementTab === 'ADDED'
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : 'text-emerald-700 hover:bg-emerald-50'
+              }`}
+            >
+              <ArrowUpRight className="w-3.5 h-3.5" />
+              <span>Added ({addedCount})</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setMovementTab('SOLD')}
+              className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                movementTab === 'SOLD'
+                  ? 'bg-rose-600 text-white shadow-xs'
+                  : 'text-rose-700 hover:bg-rose-50'
+              }`}
+            >
+              <ArrowDownRight className="w-3.5 h-3.5" />
+              <span>Sales / Sold ({soldCount})</span>
+            </button>
+          </div>
+
+          {/* Movements List */}
           {movementsLoading ? (
             <div className="p-8 text-center text-slate-400 text-sm">Loading audit records...</div>
-          ) : movements.length === 0 ? (
-            <div className="p-8 text-center text-slate-500">No stock movements recorded yet.</div>
+          ) : displayedMovements.length === 0 ? (
+            <div className="p-8 text-center text-slate-500 text-xs bg-slate-50 rounded-xl border border-dashed border-slate-200">
+              {movementTab === 'ADDED'
+                ? 'No stock addition logs recorded.'
+                : movementTab === 'SOLD'
+                ? 'No sales or deduction logs recorded.'
+                : 'No stock movements recorded yet.'}
+            </div>
           ) : (
-            <div className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden text-xs">
-              {movements.map((m) => (
-                <div key={m.id} className="p-3 flex justify-between items-start hover:bg-slate-50">
-                  <div className="space-y-0.5">
-                    <span className="font-bold text-slate-900 block">{m.product?.name}</span>
-                    <span className="text-[10px] text-slate-500 block font-mono">
-                      Reason: {m.reason}
-                    </span>
-                    <span className="text-[10px] text-slate-400 block">
-                      Actor: {m.actor?.full_name || 'System'} • {formatDateTime(m.created_at)}
-                    </span>
-                  </div>
+            <div className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden text-xs max-h-[60vh] overflow-y-auto">
+              {displayedMovements.map((m) => {
+                const isAdded = (m.quantity_change || 0) > 0;
+                return (
+                  <div
+                    key={m.id}
+                    className={`p-3 flex justify-between items-start hover:bg-slate-50 transition border-l-4 ${
+                      isAdded ? 'border-l-emerald-500' : 'border-l-rose-500'
+                    }`}
+                  >
+                    <div className="space-y-0.5 flex-1 min-w-0 pr-3">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-slate-900 truncate">
+                          {m.product?.name || 'Product'}
+                        </span>
+                        {m.product?.sku && (
+                          <span className="font-mono text-[10px] text-slate-400 shrink-0">
+                            ({m.product.sku})
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[10px] text-slate-500 block font-mono">
+                        Reason: {m.reason}
+                      </span>
+                      <span className="text-[10px] text-slate-400 block">
+                        Actor: {m.actor?.full_name || 'System'} • {formatDateTime(m.created_at)}
+                      </span>
+                    </div>
 
-                  <div className="text-right">
-                    <span
-                      className={`font-mono font-bold text-sm block ${
-                        m.quantity_change > 0 ? 'text-emerald-600' : 'text-rose-600'
-                      }`}
-                    >
-                      {m.quantity_change > 0 ? `+${m.quantity_change}` : m.quantity_change}
-                    </span>
-                    <span className="text-[10px] text-slate-400 font-mono">
-                      {m.stock_before} → {m.stock_after}
-                    </span>
+                    <div className="text-right shrink-0">
+                      <span
+                        className={`font-mono font-bold text-sm block ${
+                          isAdded ? 'text-emerald-600' : 'text-rose-600'
+                        }`}
+                      >
+                        {isAdded ? `+${m.quantity_change}` : m.quantity_change} pkts
+                      </span>
+                      <span className="text-[10px] text-slate-400 font-mono block">
+                        {m.stock_before} → {m.stock_after}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

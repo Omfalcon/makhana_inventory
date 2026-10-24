@@ -5,6 +5,7 @@ import { formatPaise, formatDateTime } from '../../lib/formatters';
 import { OrderStatusBadge } from '../../components/Badge';
 import Modal from '../../components/Modal';
 import InvoicePrint from '../../components/InvoicePrint';
+import { useWebSocketEvent } from '../../context/WebSocketContext';
 import {
   Search,
   Filter,
@@ -57,6 +58,11 @@ export default function AdminOrders() {
   useEffect(() => {
     loadData();
   }, []);
+
+  // Realtime updates via WebSocket
+  useWebSocketEvent('ORDER_CREATED', () => loadData());
+  useWebSocketEvent('ORDER_STATUS_CHANGED', () => loadData());
+  useWebSocketEvent('ORDER_CANCELLED', () => loadData());
 
   const openOrderDetails = async (orderId) => {
     try {

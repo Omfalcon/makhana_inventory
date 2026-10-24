@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../lib/api';
 import { supabase } from '../../lib/supabase';
+import { useWebSocketEvent } from '../../context/WebSocketContext';
 import { formatPaise, formatNumber } from '../../lib/formatters';
 import {
   TrendingUp,
@@ -39,7 +40,19 @@ export default function AdminDashboard({ onNavigate }) {
     loadDashboardData();
   }, [preset]);
 
-  // Set up Supabase Realtime subscriptions
+  // Realtime WebSocket listeners
+  useWebSocketEvent('ORDER_CREATED', () => {
+    setRealtimeNotice(true);
+    loadDashboardData();
+    setTimeout(() => setRealtimeNotice(false), 3000);
+  });
+  useWebSocketEvent('ORDER_STATUS_CHANGED', () => loadDashboardData());
+  useWebSocketEvent('ORDER_CANCELLED', () => loadDashboardData());
+  useWebSocketEvent('STOCK_UPDATED', () => loadDashboardData());
+  useWebSocketEvent('PRODUCT_CREATED', () => loadDashboardData());
+  useWebSocketEvent('PRODUCT_UPDATED', () => loadDashboardData());
+
+  // Set up Supabase Realtime subscriptions as secondary layer
   useEffect(() => {
     const ordersChannel = supabase
       .channel('admin-dashboard-changes')

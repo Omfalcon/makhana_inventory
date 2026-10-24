@@ -125,8 +125,16 @@ export default function AdminAnalytics() {
 
   // Selected Salesman Details or Overall
   const selectedSalesmanObj = selectedSalesmanId
-    ? salesmen.find(s => s.id === selectedSalesmanId) || null
+    ? (salesmenList.find(s => s.id === selectedSalesmanId) || salesmen.find(s => s.id === selectedSalesmanId) || null)
     : null;
+
+  const selectedSalesmanName = selectedSalesmanObj
+    ? (selectedSalesmanObj.full_name || selectedSalesmanObj.name || '')
+    : '';
+
+  const selectedSalesmanFirstName = selectedSalesmanName
+    ? selectedSalesmanName.trim().split(' ')[0]
+    : '';
 
   // Filtered orders for the selected salesman (or all if none selected)
   const displayOrders = selectedSalesmanId
@@ -240,6 +248,33 @@ export default function AdminAnalytics() {
         )}
       </div>
 
+      {/* Filter by Sales Representative (Universal Filter for Both Salesmen & Products tabs) */}
+      <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">
+            Filter by Sales Representative
+          </span>
+          <h3 className="font-bold text-slate-900 text-sm sm:text-base mt-0.5">
+            {selectedSalesmanName || 'Overall Business (All Salesmen)'}
+          </h3>
+        </div>
+
+        <div className="w-full sm:w-72">
+          <select
+            value={selectedSalesmanId}
+            onChange={(e) => setSelectedSalesmanId(e.target.value)}
+            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-600"
+          >
+            <option value="">All Salesmen (Overall Business)</option>
+            {salesmenList.map((sm) => (
+              <option key={sm.id} value={sm.id}>
+                {sm.full_name} ({sm.phone || 'Salesman'})
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
       {/* Main Tabs: Salesman Analytics vs Product Rankings */}
       <div className="flex bg-slate-100 p-1 rounded-xl text-xs font-bold text-slate-600">
         <button
@@ -256,7 +291,7 @@ export default function AdminAnalytics() {
             activeTab === 'PRODUCTS' ? 'bg-white text-slate-900 shadow-xs' : 'hover:text-slate-900'
           }`}
         >
-          Product Rankings & Stock
+          Product Rankings & Stock {selectedSalesmanFirstName ? `(${selectedSalesmanFirstName})` : ''}
         </button>
       </div>
 
@@ -264,32 +299,6 @@ export default function AdminAnalytics() {
         <div className="p-8 text-center text-slate-400 text-sm">Loading analytics reports...</div>
       ) : activeTab === 'SALESMEN' ? (
         <div className="space-y-4">
-          {/* Salesman Dropdown Selector */}
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">
-                Filter by Sales Representative
-              </span>
-              <h3 className="font-bold text-slate-900 text-sm sm:text-base mt-0.5">
-                {selectedSalesmanObj ? selectedSalesmanObj.name : 'Overall Business (All Salesmen)'}
-              </h3>
-            </div>
-
-            <div className="w-full sm:w-64">
-              <select
-                value={selectedSalesmanId}
-                onChange={(e) => setSelectedSalesmanId(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-600"
-              >
-                <option value="">All Salesmen (Overall Business)</option>
-                {salesmenList.map((sm) => (
-                  <option key={sm.id} value={sm.id}>
-                    {sm.full_name} ({sm.phone || 'Salesman'})
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
 
           {/* KPI Summary Cards (Full Totals Displayed) */}
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
@@ -297,10 +306,7 @@ export default function AdminAnalytics() {
             <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs col-span-2 sm:col-span-1">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Sales Value</span>
               <span className="text-xl sm:text-2xl font-black text-slate-900 font-mono mt-1 block truncate">
-                {formatPaise(
-                  selectedSalesmanObj ? selectedSalesmanObj.totalRevenuePaise : totalSalesPaise,
-                  false
-                )}
+                {formatPaise(totalSalesPaise, false)}
               </span>
               <span className="text-[10px] text-slate-400">Placed + Delivered</span>
             </div>
@@ -309,10 +315,7 @@ export default function AdminAnalytics() {
             <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Delivered Revenue</span>
               <span className="text-lg sm:text-xl font-black text-emerald-700 font-mono mt-1 block truncate">
-                {formatPaise(
-                  selectedSalesmanObj ? selectedSalesmanObj.deliveredRevenuePaise : deliveredRevenuePaise,
-                  false
-                )}
+                {formatPaise(deliveredRevenuePaise, false)}
               </span>
               <span className="text-[10px] text-slate-400">Cash collected</span>
             </div>
@@ -321,7 +324,7 @@ export default function AdminAnalytics() {
             <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Orders</span>
               <span className="text-2xl font-black text-slate-900 mt-1 block">
-                {selectedSalesmanObj ? selectedSalesmanObj.totalOrders : totalOrdersCount}
+                {totalOrdersCount}
               </span>
               <span className="text-[10px] text-slate-400">
                 {deliveredOrdersCount} del • {placedOrdersCount} placed
@@ -332,7 +335,7 @@ export default function AdminAnalytics() {
             <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Placed Orders</span>
               <span className="text-2xl font-black text-amber-600 mt-1 block">
-                {selectedSalesmanObj ? selectedSalesmanObj.pendingDeliveries : placedOrdersCount}
+                {placedOrdersCount}
               </span>
               <span className="text-[10px] text-slate-400 font-mono truncate block">
                 {formatPaise(placedRevenuePaise, false)} pending
@@ -343,7 +346,7 @@ export default function AdminAnalytics() {
             <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Items Sold</span>
               <span className="text-2xl font-black text-brand-700 font-mono mt-1 block">
-                {formatNumber(selectedSalesmanObj ? selectedSalesmanObj.unitsSold : totalUnitsOrdered)}
+                {formatNumber(totalUnitsOrdered)}
               </span>
               <span className="text-[10px] text-slate-400">Packets ordered</span>
             </div>
@@ -449,138 +452,93 @@ export default function AdminAnalytics() {
               </div>
             ) : (
               <div className="divide-y divide-slate-100">
-                {displayOrders.map((order) => {
-                  const orderItems = order.items || [];
-                  const orderTotalUnits = orderItems.reduce((acc, itm) => acc + (itm.quantity || 0), 0);
-
-                  return (
-                    <div key={order.id} className="p-4 hover:bg-slate-50/50 transition space-y-3">
-                      {/* Top Row: Order Number, Customer, Date, Status */}
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono text-xs font-bold text-brand-800 bg-brand-50 px-2 py-0.5 rounded border border-brand-200">
-                              {order.order_number || 'N/A'}
-                            </span>
-                            <OrderStatusBadge status={order.status} />
-                          </div>
-                          <h5 className="font-bold text-slate-900 text-sm sm:text-base mt-1">
-                            {order.customer_name || 'Customer'}
-                          </h5>
-                          <div className="text-xs text-slate-500 flex flex-wrap items-center gap-x-3 gap-y-1 mt-0.5">
-                            <span className="flex items-center gap-1 font-mono">
-                              <Phone className="w-3.5 h-3.5 text-slate-400" />
-                              <a href={`tel:${order.customer_phone}`} className="hover:underline text-slate-700">
-                                {order.customer_phone || '-'}
-                              </a>
-                            </span>
-                            <span>•</span>
-                            <span>{formatDateTime(order.created_at)}</span>
-                            <span>•</span>
-                            <span className="font-semibold text-slate-700">
-                              Salesman: {order.salesman?.full_name || 'Field Salesman'}
-                            </span>
-                          </div>
-                          {order.customer_address && (
-                            <div className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
-                              <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
-                              <span className="truncate max-w-md">{order.customer_address}</span>
-                            </div>
-                          )}
+                {displayOrders.map((order) => (
+                  <div key={order.id} className="p-4 hover:bg-slate-50/50 transition">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      {/* Customer Name & Details */}
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-xs font-bold text-brand-800 bg-brand-50 px-2 py-0.5 rounded border border-brand-200">
+                            {order.order_number || 'N/A'}
+                          </span>
+                          <OrderStatusBadge status={order.status} />
                         </div>
-
-                        {/* Order Total & Action Buttons */}
-                        <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
-                          <div>
-                            <span className="text-[10px] text-slate-400 uppercase font-bold block sm:text-right">
-                              Order Grand Total
-                            </span>
-                            <span className="text-base sm:text-lg font-black text-emerald-800 font-mono block">
-                              {formatPaise(order.total_amount_paise || 0)}
-                            </span>
-                          </div>
-
-                          <div className="flex items-center gap-1.5">
-                            <button
-                              onClick={() => openOrderDetails(order.id)}
-                              className="p-1.5 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-semibold transition"
-                              title="Full Order Details"
-                            >
-                              <Eye className="w-3.5 h-3.5" />
-                            </button>
-
-                            <button
-                              onClick={() => handleGenerateInvoice(order.id)}
-                              disabled={actionLoading}
-                              className="flex items-center gap-1 px-2.5 py-1.5 bg-brand-50 text-brand-800 hover:bg-brand-100 rounded-lg text-xs font-bold transition border border-brand-200"
-                              title="Generate GST Invoice"
-                            >
-                              <Printer className="w-3.5 h-3.5" />
-                              <span>Bill</span>
-                            </button>
-
-                            {order.status === 'PLACED' && (
-                              <button
-                                onClick={() => handleMarkDelivered(order.id)}
-                                disabled={actionLoading}
-                                className="flex items-center gap-1 px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition shadow-xs"
-                                title="Mark Delivered"
-                              >
-                                <CheckCircle2 className="w-3.5 h-3.5" />
-                                <span>Deliver</span>
-                              </button>
-                            )}
-                          </div>
+                        <h5 className="font-bold text-slate-900 text-sm sm:text-base">
+                          {order.customer_name || 'Customer'}
+                        </h5>
+                        <div className="text-xs text-slate-500 flex flex-wrap items-center gap-x-3 gap-y-1">
+                          <span className="flex items-center gap-1 font-mono">
+                            <Phone className="w-3.5 h-3.5 text-slate-400" />
+                            <a href={`tel:${order.customer_phone}`} className="hover:underline text-slate-700">
+                              {order.customer_phone || '-'}
+                            </a>
+                          </span>
+                          <span>•</span>
+                          <span>{formatDateTime(order.created_at)}</span>
+                          <span>•</span>
+                          <span className="font-semibold text-slate-700">
+                            Salesman: {order.salesman?.full_name || 'Field Salesman'}
+                          </span>
                         </div>
-                      </div>
-
-                      {/* Explicit Visible Items List */}
-                      <div className="bg-slate-50/90 rounded-xl p-3 border border-slate-200/80 space-y-2">
-                        <div className="flex items-center justify-between text-[11px] font-bold text-slate-600 uppercase tracking-wider">
-                          <span>Ordered Items ({orderItems.length} {orderItems.length === 1 ? 'variety' : 'varieties'} • {orderTotalUnits} total pkts)</span>
-                          <span className="font-mono text-slate-500">Subtotal</span>
-                        </div>
-
-                        {orderItems.length === 0 ? (
-                          <div className="text-xs text-slate-400 italic">No item snapshots recorded for this order.</div>
-                        ) : (
-                          <div className="divide-y divide-slate-200/60">
-                            {orderItems.map((item) => (
-                              <div key={item.id} className="py-1.5 flex items-center justify-between text-xs gap-2">
-                                <div className="flex items-center gap-2 min-w-0">
-                                  <span className="font-bold text-slate-900 truncate">
-                                    {item.product_name_snapshot || 'Makhana Item'}
-                                  </span>
-                                  <span className="text-[10px] font-mono text-slate-400 shrink-0">
-                                    ({item.sku_snapshot || 'SKU'})
-                                  </span>
-                                </div>
-
-                                <div className="flex items-center gap-3 shrink-0">
-                                  <span className="px-2 py-0.5 bg-white border border-slate-200 text-slate-800 font-bold rounded text-[11px] font-mono">
-                                    {item.quantity} pkts
-                                  </span>
-                                  <span className="text-slate-500 font-mono text-xs hidden sm:inline">
-                                    @{formatPaise(item.unit_price_paise)}
-                                  </span>
-                                  <span className="font-mono font-bold text-slate-900 text-xs w-20 text-right">
-                                    {formatPaise(item.line_total_paise)}
-                                  </span>
-                                </div>
-                              </div>
-                            ))}
+                        {order.customer_address && (
+                          <div className="text-xs text-slate-400 flex items-center gap-1">
+                            <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
+                            <span className="truncate max-w-md">{order.customer_address}</span>
                           </div>
                         )}
                       </div>
+
+                      {/* Order Value & Action Buttons */}
+                      <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+                        <div>
+                          <span className="text-[10px] text-slate-400 uppercase font-bold block sm:text-right">
+                            Order Value
+                          </span>
+                          <span className="text-base sm:text-lg font-black text-emerald-800 font-mono block">
+                            {formatPaise(order.total_amount_paise || 0)}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => openOrderDetails(order.id)}
+                            className="p-1.5 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-semibold transition"
+                            title="Full Order Details"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </button>
+
+                          <button
+                            onClick={() => handleGenerateInvoice(order.id)}
+                            disabled={actionLoading}
+                            className="flex items-center gap-1 px-2.5 py-1.5 bg-brand-50 text-brand-800 hover:bg-brand-100 rounded-lg text-xs font-bold transition border border-brand-200"
+                            title="Generate GST Invoice"
+                          >
+                            <Printer className="w-3.5 h-3.5" />
+                            <span>Bill</span>
+                          </button>
+
+                          {order.status === 'PLACED' && (
+                            <button
+                              onClick={() => handleMarkDelivered(order.id)}
+                              disabled={actionLoading}
+                              className="flex items-center gap-1 px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition shadow-xs"
+                              title="Mark Delivered"
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>Deliver</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
               </div>
             )}
           </div>
         </div>
       ) : (
-        /* Products Tab */
         <div className="space-y-4">
           {/* Products Summary Banner */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -599,15 +557,19 @@ export default function AdminAnalytics() {
             </div>
 
             <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Units Sold ({preset})</span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                {selectedSalesmanFirstName ? `${selectedSalesmanFirstName}'s Units Sold` : `Units Sold (${preset})`}
+              </span>
               <span className="text-2xl font-black text-brand-700 font-mono mt-1 block">
                 {formatNumber(totalProductsUnitsSold)}
               </span>
-              <span className="text-[10px] text-slate-400">Total packets ordered</span>
+              <span className="text-[10px] text-slate-400">Packets ordered</span>
             </div>
 
             <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Delivered Revenue ({preset})</span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                {selectedSalesmanFirstName ? `${selectedSalesmanFirstName}'s Revenue` : `Delivered Revenue (${preset})`}
+              </span>
               <span className="text-xl font-black text-emerald-700 font-mono mt-1 block truncate">
                 {formatPaise(totalProductsRevenuePaise, false)}
               </span>
@@ -618,7 +580,7 @@ export default function AdminAnalytics() {
           {/* Top Products Bar Chart */}
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
             <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-4">
-              Top Products by Units Sold ({preset})
+              {selectedSalesmanName ? `Top Products Sold by ${selectedSalesmanName} (${preset})` : `Top Products by Units Sold (${preset})`}
             </h3>
             {topProductsChart.length === 0 || topProductsChart.every(p => p.units === 0) ? (
               <div className="h-40 flex items-center justify-center text-xs text-slate-400">
@@ -641,20 +603,46 @@ export default function AdminAnalytics() {
           {/* Product Sales Breakdown Table */}
           <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
             <div className="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
-              <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                All Products Sales & Stock Breakdown (Descending by Units Sold)
-              </span>
+              <div>
+                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
+                  {selectedSalesmanName ? `${selectedSalesmanName}'s Product Sales & Stock Breakdown` : 'All Products Sales & Stock Breakdown'}
+                </span>
+                <span className="text-[11px] text-slate-400 font-medium">
+                  {selectedSalesmanName ? `Filtered for ${selectedSalesmanName}` : 'Showing all sales team contributions'}
+                </span>
+              </div>
               <span className="text-xs text-slate-400 font-medium">{products.length} products</span>
             </div>
             <div className="divide-y divide-slate-100">
               {products.map((p) => (
                 <div key={p.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/50 transition">
-                  <div>
+                  <div className="space-y-1">
                     <h4 className="font-bold text-slate-900 text-sm">{p.name}</h4>
-                    <span className="font-mono text-xs text-slate-400">{p.sku}</span>
+                    <span className="font-mono text-xs text-slate-400 block">{p.sku}</span>
+
+                    {/* Salesman Breakdown Chips */}
+                    {p.bySalesman && p.bySalesman.length > 0 && (
+                      <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                        <span className="text-[10px] uppercase font-bold text-slate-400">By Salesman:</span>
+                        {p.bySalesman.map((sm) => (
+                          <span
+                            key={sm.id}
+                            className={`px-2 py-0.5 rounded-md text-[11px] flex items-center gap-1 border ${
+                              selectedSalesmanId === sm.id
+                                ? 'bg-brand-50 text-brand-900 border-brand-300 font-bold'
+                                : 'bg-slate-100 text-slate-700 border-slate-200 font-medium'
+                            }`}
+                          >
+                            <span>{sm.name}:</span>
+                            <span className="font-mono font-bold">{sm.unitsSold} pkts</span>
+                            <span className="text-slate-400 text-[10px]">({formatPaise(sm.deliveredRevenuePaise)})</span>
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
-                  <div className="flex items-center gap-4 text-xs">
+                  <div className="flex items-center gap-4 text-xs shrink-0">
                     <div>
                       <span className="text-[10px] text-slate-400 block uppercase">Stock Left</span>
                       <span className={`font-mono font-bold ${p.stockRemaining <= p.lowStockThreshold ? 'text-amber-600' : 'text-slate-800'}`}>
@@ -663,14 +651,18 @@ export default function AdminAnalytics() {
                     </div>
 
                     <div>
-                      <span className="text-[10px] text-slate-400 block uppercase">Units Sold</span>
+                      <span className="text-[10px] text-slate-400 block uppercase">
+                        {selectedSalesmanFirstName ? `${selectedSalesmanFirstName} Sold` : 'Units Sold'}
+                      </span>
                       <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded">
                         {p.unitsSold}
                       </span>
                     </div>
 
                     <div className="text-right">
-                      <span className="text-[10px] text-slate-400 block uppercase">Delivered Revenue</span>
+                      <span className="text-[10px] text-slate-400 block uppercase">
+                        {selectedSalesmanFirstName ? `${selectedSalesmanFirstName} Revenue` : 'Delivered Revenue'}
+                      </span>
                       <span className="font-mono font-bold text-emerald-800">
                         {formatPaise(p.deliveredRevenuePaise)}
                       </span>
