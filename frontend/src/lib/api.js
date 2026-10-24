@@ -4,8 +4,21 @@ import { supabase } from './supabase';
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 async function fetchWithAuth(endpoint, options = {}) {
-  const { data: { session } } = await supabase.auth.getSession();
-  const token = session?.access_token;
+  let { data: { session } } = await supabase.auth.getSession();
+
+  // Proactively refresh session token if expiring within 3 minutes
+  if (session?.expires_at && (session.expires_at * 1000) < Date.now() + 180000) {
+    try {
+      const { data: refData } = await supabase.auth.refreshSession();
+      if (refData?.session) {
+        session = refData.session;
+      }
+    } catch (e) {
+      // Continue with current session if silent refresh fails
+    }
+  }
+
+  let token = session?.access_token;
 
   const headers = {
     'Content-Type': 'application/json',
@@ -18,10 +31,27 @@ async function fetchWithAuth(endpoint, options = {}) {
 
   const url = `${API_BASE}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
 
-  const response = await fetch(url, {
+  let response = await fetch(url, {
     ...options,
     headers
   });
+
+  // If 401 Unauthorized, auto-refresh session and retry request transparently
+  if (response.status === 401) {
+    try {
+      const { data: refreshed, error: refErr } = await supabase.auth.refreshSession();
+      if (!refErr && refreshed?.session?.access_token) {
+        token = refreshed.session.access_token;
+        headers['Authorization'] = `Bearer ${token}`;
+        response = await fetch(url, {
+          ...options,
+          headers
+        });
+      }
+    } catch (e) {
+      // Fall through to standard error handling
+    }
+  }
 
   const data = await response.json().catch(() => ({}));
 

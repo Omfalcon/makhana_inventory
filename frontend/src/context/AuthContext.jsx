@@ -77,6 +77,12 @@ export function AuthProvider({ children }) {
           .single();
 
         if (error || !data) {
+          // If we have a cached profile, keep it active on temporary query/network failures
+          const cached = getStored('makhana_cached_profile');
+          if (cached && cached.id === currentUser.id) {
+            console.warn('Network issue fetching profile, retaining active cached profile.');
+            return cached;
+          }
           setAuthError('Profile not found. Please contact administrator.');
           updateProfile(null);
         } else {
@@ -111,28 +117,62 @@ export function AuthProvider({ children }) {
           if (mounted) setLoading(false);
         });
       } else {
-        updateProfile(null);
+        const cachedUser = getStored('makhana_cached_user');
+        if (!cachedUser) {
+          updateProfile(null);
+        }
         setLoading(false);
       }
     });
 
-    // 2. Auth state change listener (skip redundant duplicate call on initial load)
+    // 2. Auth state change listener (only clear state on explicit SIGNED_OUT)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return;
       if (event === 'INITIAL_SESSION') return; // Handled above
 
       const currentUser = session?.user || null;
-      updateUser(currentUser);
       if (currentUser) {
+        updateUser(currentUser);
         await loadProfile(currentUser);
-      } else {
+      } else if (event === 'SIGNED_OUT') {
+        updateUser(null);
         updateProfile(null);
       }
       setLoading(false);
     });
 
+    // 3. Proactive session keep-alive: Heartbeat every 5 minutes and on window focus
+    const keepSessionAlive = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          const expiresAtMs = (session.expires_at || 0) * 1000;
+          // If token expires within 10 minutes or already expired, refresh proactively
+          if (Date.now() > expiresAtMs - (10 * 60 * 1000)) {
+            await supabase.auth.refreshSession();
+          }
+        }
+      } catch (err) {
+        console.warn('Silent session keepalive refresh error:', err);
+      }
+    };
+
+    const keepAliveTimer = setInterval(keepSessionAlive, 5 * 60 * 1000);
+
+    const onFocusOrVisible = () => {
+      if (document.visibilityState === 'visible') {
+        keepSessionAlive();
+      }
+    };
+
+    window.addEventListener('focus', onFocusOrVisible);
+    document.addEventListener('visibilitychange', onFocusOrVisible);
+
     return () => {
       mounted = false;
+      clearInterval(keepAliveTimer);
+      window.removeEventListener('focus', onFocusOrVisible);
+      document.removeEventListener('visibilitychange', onFocusOrVisible);
       subscription.unsubscribe();
     };
   }, []);
