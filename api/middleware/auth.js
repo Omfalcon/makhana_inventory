@@ -1,6 +1,10 @@
 // api/middleware/auth.js
 const { supabaseAdmin } = require('../utils/supabase');
 
+// In-memory cache for verified tokens & profiles (TTL 60s)
+const authCache = new Map();
+const AUTH_CACHE_TTL_MS = 60 * 1000;
+
 async function authenticate(req, res, next) {
     try {
         const authHeader = req.headers.authorization;
@@ -19,6 +23,14 @@ async function authenticate(req, res, next) {
             });
         }
 
+        // Fast path: Check in-memory cache
+        const cached = authCache.get(token);
+        if (cached && Date.now() < cached.expiresAt) {
+            req.user = cached.user;
+            req.profile = cached.profile;
+            return next();
+        }
+
         if (!supabaseAdmin) {
             return res.status(500).json({
                 error: 'Configuration Error',
@@ -29,6 +41,7 @@ async function authenticate(req, res, next) {
         // Verify token with Supabase Auth
         const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
         if (authError || !user) {
+            authCache.delete(token);
             return res.status(401).json({
                 error: 'Unauthorized',
                 message: 'Invalid or expired session. Please log in again.'
@@ -43,6 +56,7 @@ async function authenticate(req, res, next) {
             .single();
 
         if (profileError || !profile) {
+            authCache.delete(token);
             return res.status(403).json({
                 error: 'Forbidden',
                 message: 'User profile not found or inactive.'
@@ -50,11 +64,23 @@ async function authenticate(req, res, next) {
         }
 
         if (!profile.is_active) {
+            authCache.delete(token);
             return res.status(403).json({
                 error: 'Forbidden',
                 message: 'Your account has been deactivated. Please contact the administrator.'
             });
         }
+
+        // Cache valid auth result
+        if (authCache.size > 1000) {
+            const oldestKey = authCache.keys().next().value;
+            authCache.delete(oldestKey);
+        }
+        authCache.set(token, {
+            user,
+            profile,
+            expiresAt: Date.now() + AUTH_CACHE_TTL_MS
+        });
 
         req.user = user;
         req.profile = profile;
