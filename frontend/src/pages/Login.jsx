@@ -1,8 +1,6 @@
 // frontend/src/pages/Login.jsx
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { api } from '../lib/api';
-import Modal from '../components/Modal';
 import {
   Package,
   Lock,
@@ -13,9 +11,7 @@ import {
   Truck,
   ShieldCheck,
   Eye,
-  EyeOff,
-  KeyRound,
-  CheckCircle2
+  EyeOff
 } from 'lucide-react';
 
 export default function Login() {
@@ -27,14 +23,6 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-
-  // Reset Password Modal
-  const [showResetModal, setShowResetModal] = useState(false);
-  const [resetIdentifier, setResetIdentifier] = useState('');
-  const [resetNewPassword, setResetNewPassword] = useState('');
-  const [resetLoading, setResetLoading] = useState(false);
-  const [resetError, setResetError] = useState('');
-  const [resetSuccess, setResetSuccess] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -63,43 +51,6 @@ export default function Login() {
       setErrorMessage(err.message || 'Login failed. Please verify credentials.');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleResetSubmit = async (e) => {
-    e.preventDefault();
-    setResetError('');
-    setResetSuccess('');
-
-    if (!resetIdentifier.trim()) {
-      setResetError('Please enter your phone number or email.');
-      return;
-    }
-
-    if (!resetNewPassword || resetNewPassword.length < 6) {
-      setResetError('New password must be at least 6 characters.');
-      return;
-    }
-
-    try {
-      setResetLoading(true);
-      const res = await api.auth.resetPassword(resetIdentifier.trim(), resetNewPassword);
-      setResetSuccess(res.message || 'Password updated successfully!');
-      setTimeout(() => {
-        setShowResetModal(false);
-        setPassword(resetNewPassword);
-        if (resetIdentifier.includes('@')) {
-          setRole('ADMIN');
-          setEmail(resetIdentifier.trim());
-        } else {
-          setRole('SALESMAN');
-          setPhone(resetIdentifier.trim());
-        }
-      }, 1000);
-    } catch (err) {
-      setResetError(err.message || 'Failed to reset password.');
-    } finally {
-      setResetLoading(false);
     }
   };
 
@@ -218,24 +169,9 @@ export default function Login() {
             )}
 
             <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="block text-xs font-bold text-slate-700 uppercase">
-                  Password
-                </label>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setResetIdentifier(role === 'SALESMAN' ? (phone || '8849699787') : (email || 'admin@makhanabiz.com'));
-                    setResetNewPassword('');
-                    setResetError('');
-                    setResetSuccess('');
-                    setShowResetModal(true);
-                  }}
-                  className="text-xs text-brand-700 hover:text-brand-800 font-semibold"
-                >
-                  Forgot / Reset?
-                </button>
-              </div>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                Password
+              </label>
 
               <div className="relative">
                 <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -268,128 +204,11 @@ export default function Login() {
             </button>
           </form>
 
-          {/* Quick Fill Credentials Card */}
-          <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-3.5 text-xs text-slate-600 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="font-bold text-slate-700 text-[10px] uppercase tracking-wider">
-                Quick Login Credentials
-              </span>
-              <span className="text-[10px] text-slate-400">Click to fill</span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setRole('SALESMAN');
-                  setPhone('8849699711');
-                  setPassword('password123');
-                  setErrorMessage('');
-                }}
-                className="bg-white border border-slate-200 hover:border-brand-500 hover:bg-brand-50/50 p-2.5 rounded-xl text-left transition shadow-xs group"
-              >
-                <span className="font-bold text-slate-800 text-xs block group-hover:text-brand-900">
-                  Salesman (Om)
-                </span>
-                <span className="text-[11px] font-mono text-slate-600 block">8849699711</span>
-                <span className="text-[10px] text-slate-400 font-mono">password123</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setRole('ADMIN');
-                  setEmail('admin@makhanabiz.com');
-                  setPassword('password123');
-                  setErrorMessage('');
-                }}
-                className="bg-white border border-slate-200 hover:border-brand-500 hover:bg-brand-50/50 p-2.5 rounded-xl text-left transition shadow-xs group"
-              >
-                <span className="font-bold text-slate-800 text-xs block group-hover:text-brand-900">
-                  Admin
-                </span>
-                <span className="text-[11px] font-mono text-slate-600 block truncate">admin@...</span>
-                <span className="text-[10px] text-slate-400 font-mono">password123</span>
-              </button>
-            </div>
-          </div>
+          <p className="text-center text-[11px] text-slate-400 font-medium pt-1">
+            Forgot your password? Please contact your system administrator.
+          </p>
         </div>
       </div>
-
-      {/* Quick Reset Password Modal */}
-      <Modal
-        isOpen={showResetModal}
-        onClose={() => {
-          if (!resetLoading) setShowResetModal(false);
-        }}
-        title="Set / Reset Account Password"
-      >
-        <form onSubmit={handleResetSubmit} className="space-y-4">
-          <p className="text-xs text-slate-500">
-            Forgot your password or want to set a new one? Enter your mobile phone or email below.
-          </p>
-
-          {resetError && (
-            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              <span>{resetError}</span>
-            </div>
-          )}
-
-          {resetSuccess && (
-            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs flex items-center gap-2 font-bold">
-              <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
-              <span>{resetSuccess}</span>
-            </div>
-          )}
-
-          <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-              Mobile Phone or Email *
-            </label>
-            <input
-              type="text"
-              required
-              placeholder="e.g. 8849699787 or admin@makhanabiz.com"
-              value={resetIdentifier}
-              onChange={(e) => setResetIdentifier(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-brand-600 focus:outline-none"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-              New Password *
-            </label>
-            <input
-              type="password"
-              required
-              placeholder="Min 6 characters"
-              value={resetNewPassword}
-              onChange={(e) => setResetNewPassword(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-brand-600 focus:outline-none"
-            />
-          </div>
-
-          <div className="flex gap-2 pt-2">
-            <button
-              type="button"
-              onClick={() => setShowResetModal(false)}
-              disabled={resetLoading}
-              className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-semibold text-xs hover:bg-slate-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={resetLoading}
-              className="flex-1 py-2.5 rounded-xl bg-brand-700 hover:bg-brand-800 text-white font-bold text-xs transition disabled:opacity-50"
-            >
-              {resetLoading ? 'Updating...' : 'Set Password'}
-            </button>
-          </div>
-        </form>
-      </Modal>
     </div>
   );
 }
