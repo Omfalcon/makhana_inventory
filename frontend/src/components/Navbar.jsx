@@ -1,11 +1,13 @@
 // frontend/src/components/Navbar.jsx
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useWebSocket } from '../context/WebSocketContext';
 import { RoleBadge } from './Badge';
 import { LogOut, Package, User } from 'lucide-react';
 
 export default function Navbar() {
   const { profile, logout } = useAuth();
+  const { connected } = useWebSocket();
   const [loggingOut, setLoggingOut] = useState(false);
 
   const handleLogout = async () => {
@@ -31,6 +33,18 @@ export default function Navbar() {
 
         {/* User Info & Logout */}
         <div className="flex items-center space-x-3">
+          {connected ? (
+            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              Live
+            </span>
+          ) : (
+            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-100 text-slate-500">
+              <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+              Syncing
+            </span>
+          )}
+
           {profile && (
             <div className="hidden sm:flex flex-col text-right">
               <span className="text-sm font-semibold text-slate-800">{profile.full_name}</span>
