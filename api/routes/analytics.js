@@ -110,7 +110,8 @@ router.get('/admin', authenticate, requireRole('ADMIN'), async (req, res) => {
                 unitsSold: 0,
                 deliveredUnitsSold: 0,
                 deliveredRevenuePaise: 0,
-                totalOrderedRevenuePaise: 0
+                totalOrderedRevenuePaise: 0,
+                salesmenMap: {}
             };
         });
 
@@ -159,13 +160,34 @@ router.get('/admin', authenticate, requireRole('ADMIN'), async (req, res) => {
                     }
 
                     if (item.product_id && productStats[item.product_id]) {
+                        const prod = productStats[item.product_id];
                         if (order.status !== 'CANCELLED') {
-                            productStats[item.product_id].unitsSold += item.quantity;
-                            productStats[item.product_id].totalOrderedRevenuePaise += item.line_total_paise;
+                            prod.unitsSold += item.quantity;
+                            prod.totalOrderedRevenuePaise += item.line_total_paise;
                         }
                         if (isDelivered) {
-                            productStats[item.product_id].deliveredUnitsSold += item.quantity;
-                            productStats[item.product_id].deliveredRevenuePaise += item.line_total_paise;
+                            prod.deliveredUnitsSold += item.quantity;
+                            prod.deliveredRevenuePaise += item.line_total_paise;
+                        }
+
+                        // Track salesman breakdown per product
+                        if (sId && order.status !== 'CANCELLED') {
+                            if (!prod.salesmenMap[sId]) {
+                                prod.salesmenMap[sId] = {
+                                    id: sId,
+                                    name: sName,
+                                    unitsSold: 0,
+                                    deliveredUnitsSold: 0,
+                                    deliveredRevenuePaise: 0,
+                                    totalRevenuePaise: 0
+                                };
+                            }
+                            prod.salesmenMap[sId].unitsSold += item.quantity;
+                            prod.salesmenMap[sId].totalRevenuePaise += item.line_total_paise;
+                            if (isDelivered) {
+                                prod.salesmenMap[sId].deliveredUnitsSold += item.quantity;
+                                prod.salesmenMap[sId].deliveredRevenuePaise += item.line_total_paise;
+                            }
                         }
                     }
 
@@ -180,7 +202,10 @@ router.get('/admin', authenticate, requireRole('ADMIN'), async (req, res) => {
         const lowStockProducts = products.filter(p => p.stock_quantity <= p.low_stock_threshold && p.is_active);
 
         // Best-selling product by delivered quantity, and highest revenue
-        const productList = Object.values(productStats);
+        const productList = Object.values(productStats).map(p => ({
+            ...p,
+            bySalesman: Object.values(p.salesmenMap || {})
+        }));
         const bestSellingByQuantity = [...productList].sort((a, b) => b.unitsSold - a.unitsSold)[0] || null;
         const highestRevenueProduct = [...productList].sort((a, b) => b.deliveredRevenuePaise - a.deliveredRevenuePaise)[0] || null;
         const lowestSellingProduct = [...productList].sort((a, b) => a.unitsSold - b.unitsSold)[0] || null;
