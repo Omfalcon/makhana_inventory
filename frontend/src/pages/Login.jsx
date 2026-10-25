@@ -32,9 +32,14 @@ export default function Login() {
     if (!inputVal) {
       setErrorMessage(
         role === 'SALESMAN'
-          ? 'Please enter your mobile phone number.'
+          ? 'Please enter your 10-digit mobile number.'
           : 'Please enter your admin email address.'
       );
+      return;
+    }
+
+    if (role === 'SALESMAN' && inputVal.length !== 10) {
+      setErrorMessage('Please enter a valid 10-digit mobile number.');
       return;
     }
 
@@ -135,18 +140,26 @@ export default function Login() {
                 <div className="relative">
                   <Phone className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
-                    type="text"
+                    type="tel"
                     required
                     inputMode="numeric"
+                    pattern="[0-9]{10}"
+                    maxLength={10}
                     placeholder="e.g. 8849699787"
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
+                    onChange={(e) => {
+                      const digits = e.target.value.replace(/\D/g, '').slice(0, 10);
+                      setPhone(digits);
+                    }}
                     className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-mono tracking-wide focus:ring-2 focus:ring-brand-600 focus:outline-none"
                   />
                 </div>
-                <span className="text-[11px] text-slate-400 mt-1 block">
-                  Enter registered 10-digit mobile number
-                </span>
+                <div className="flex items-center justify-between text-[11px] text-slate-400 mt-1">
+                  <span>Enter registered 10-digit mobile number</span>
+                  <span className={`font-mono font-medium ${phone.length === 10 ? 'text-emerald-600 font-bold' : ''}`}>
+                    {phone.length}/10
+                  </span>
+                </div>
               </div>
             ) : (
               <div>
