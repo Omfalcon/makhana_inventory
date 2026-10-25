@@ -209,7 +209,20 @@ export function AuthProvider({ children }) {
 
     if (data.user) {
       updateUser(data.user);
-      await loadProfile(data.user);
+      // Immediately hydrate initial profile from user_metadata so there is zero white screen delay
+      const meta = data.user.user_metadata || {};
+      const initialRole = (meta.role || (cleanId.includes('@') ? 'ADMIN' : 'SALESMAN')).toUpperCase();
+      const initialProfile = {
+        id: data.user.id,
+        full_name: meta.full_name || data.user.email?.split('@')[0] || 'User',
+        role: initialRole,
+        phone: meta.phone || (cleanId.includes('@') ? null : cleanId),
+        is_active: true
+      };
+      updateProfile(initialProfile);
+
+      // Background refresh full profile from database/API
+      loadProfile(data.user).catch((e) => console.warn('Background profile load error:', e));
     }
     return data;
   };
@@ -224,13 +237,15 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const roleUpper = (profile?.role || user?.user_metadata?.role || '').toUpperCase();
+
   const value = {
     user,
     profile,
     loading,
     authError,
-    isAdmin: profile?.role === 'ADMIN',
-    isSalesman: profile?.role === 'SALESMAN',
+    isAdmin: roleUpper === 'ADMIN',
+    isSalesman: roleUpper === 'SALESMAN',
     login,
     logout,
     refreshProfile: () => user && loadProfile(user)

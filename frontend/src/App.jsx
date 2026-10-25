@@ -1,39 +1,25 @@
 // frontend/src/App.jsx
-import React, { useState, Suspense, lazy } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import Login from './pages/Login';
 import Unauthorized from './pages/Unauthorized';
+import ErrorBoundary from './components/ErrorBoundary';
 
-// Lazy load pages for fast initial bundle and instant page open
-const SalesmanHome = lazy(() => import('./pages/salesman/SalesmanHome'));
-const SalesmanCatalogue = lazy(() => import('./pages/salesman/SalesmanCatalogue'));
-const SalesmanCart = lazy(() => import('./pages/salesman/SalesmanCart'));
-const SalesmanOrders = lazy(() => import('./pages/salesman/SalesmanOrders'));
-const SalesmanDeliveries = lazy(() => import('./pages/salesman/SalesmanDeliveries'));
-const SalesmanPerformance = lazy(() => import('./pages/salesman/SalesmanPerformance'));
+// Direct imports: eliminates lazy-chunk network roundtrips & white-screen lag
+import SalesmanHome from './pages/salesman/SalesmanHome';
+import SalesmanCatalogue from './pages/salesman/SalesmanCatalogue';
+import SalesmanCart from './pages/salesman/SalesmanCart';
+import SalesmanOrders from './pages/salesman/SalesmanOrders';
+import SalesmanDeliveries from './pages/salesman/SalesmanDeliveries';
+import SalesmanPerformance from './pages/salesman/SalesmanPerformance';
 
-const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
-const AdminOrders = lazy(() => import('./pages/admin/AdminOrders'));
-const AdminInventory = lazy(() => import('./pages/admin/AdminInventory'));
-const AdminSalesmen = lazy(() => import('./pages/admin/AdminSalesmen'));
-const AdminAnalytics = lazy(() => import('./pages/admin/AdminAnalytics'));
-const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'));
-
-function PageLoadingSkeleton() {
-  return (
-    <div className="space-y-4 animate-pulse py-4">
-      <div className="h-24 bg-slate-200/70 rounded-2xl w-full" />
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="h-20 bg-slate-200/70 rounded-2xl" />
-        <div className="h-20 bg-slate-200/70 rounded-2xl" />
-        <div className="h-20 bg-slate-200/70 rounded-2xl" />
-        <div className="h-20 bg-slate-200/70 rounded-2xl" />
-      </div>
-      <div className="h-48 bg-slate-200/70 rounded-2xl w-full" />
-    </div>
-  );
-}
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminOrders from './pages/admin/AdminOrders';
+import AdminInventory from './pages/admin/AdminInventory';
+import AdminSalesmen from './pages/admin/AdminSalesmen';
+import AdminAnalytics from './pages/admin/AdminAnalytics';
+import AdminSettings from './pages/admin/AdminSettings';
 
 export default function App() {
   const { user, profile, loading, isAdmin, isSalesman } = useAuth();
@@ -69,11 +55,11 @@ export default function App() {
   const handleSelectTab = isAdmin ? setAdminTab : setSalesmanTab;
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
-      <Navbar activeTab={activeTab} onSelectTab={handleSelectTab} />
+    <ErrorBoundary>
+      <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
+        <Navbar activeTab={activeTab} onSelectTab={handleSelectTab} />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
-        <Suspense fallback={<PageLoadingSkeleton />}>
+        <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
           {isAdmin && (
             <>
               {adminTab === 'dashboard' && <AdminDashboard onNavigate={setAdminTab} />}
@@ -95,8 +81,15 @@ export default function App() {
               {salesmanTab === 'performance' && <SalesmanPerformance />}
             </>
           )}
-        </Suspense>
-      </main>
-    </div>
+
+          {!isAdmin && !isSalesman && (
+            <div className="p-8 text-center text-slate-500 bg-white rounded-2xl border border-slate-200">
+              <p className="font-bold text-sm text-slate-800">Initializing your account workspace...</p>
+              <p className="text-xs text-slate-400 mt-1">Please wait a moment while permissions are loaded.</p>
+            </div>
+          )}
+        </main>
+      </div>
+    </ErrorBoundary>
   );
 }
