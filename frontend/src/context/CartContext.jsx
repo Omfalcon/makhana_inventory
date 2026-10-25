@@ -114,8 +114,11 @@ export function CartProvider({ children }) {
   };
 
   // Calculate totals
-  const totalUnits = items.reduce((sum, item) => sum + item.quantity, 0);
-  const subtotalPaise = items.reduce((sum, item) => sum + (item.product.selling_price_paise * item.quantity), 0);
+  const totalUnits = items.reduce((sum, item) => sum + (item?.quantity || 0), 0);
+  const subtotalPaise = items.reduce((sum, item) => {
+    const price = item?.product?.price_paise ?? item?.product?.selling_price_paise ?? 0;
+    return sum + (price * (item?.quantity || 0));
+  }, 0);
 
   const value = {
     items,
