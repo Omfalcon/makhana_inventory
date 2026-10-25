@@ -6,8 +6,8 @@
   "scripts": {
     "dev:api": "cd api && npm run dev",
     "dev:frontend": "cd frontend && npm run dev",
-    "build:frontend": "npm run build --prefix frontend",
-    "build": "npm run build --prefix frontend",
+    "build:frontend": "cd frontend && npm run build",
+    "build": "cd frontend && npm run build",
     "create-admin": "node scripts/create_first_admin.js"
   },
   "keywords": [
