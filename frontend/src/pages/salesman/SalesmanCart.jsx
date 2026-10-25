@@ -273,7 +273,7 @@ export default function SalesmanCart({ onNavigate }) {
   }
 
   return (
-    <div className="space-y-5 pb-24">
+    <div className="space-y-5 pb-10">
       {/* Top Bar */}
       <div className="flex items-center gap-3">
         <button

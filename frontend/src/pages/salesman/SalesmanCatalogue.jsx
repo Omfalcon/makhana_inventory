@@ -49,7 +49,7 @@ export default function SalesmanCatalogue({ onNavigate }) {
   };
 
   return (
-    <div className="space-y-4 pb-28">
+    <div className="space-y-4 pb-24">
       {/* Search Header */}
       <div className="sticky top-16 z-20 bg-slate-50 pt-2 pb-2">
         <div className="relative">
@@ -160,7 +160,7 @@ export default function SalesmanCatalogue({ onNavigate }) {
 
       {/* Floating Persistent Place Order Bar */}
       {totalUnits > 0 && (
-        <div className="fixed bottom-20 left-3 right-3 sm:left-auto sm:right-6 sm:w-96 z-40">
+        <div className="fixed bottom-4 left-3 right-3 sm:left-auto sm:right-6 sm:w-96 z-40">
           <div className="bg-slate-900 text-white p-3.5 rounded-2xl shadow-2xl flex items-center justify-between border border-slate-700 animate-slide-up">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-brand-600 flex items-center justify-center text-white shrink-0 shadow-sm">

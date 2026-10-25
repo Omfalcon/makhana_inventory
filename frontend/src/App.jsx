@@ -2,7 +2,6 @@
 import React, { useState, Suspense, lazy } from 'react';
 import { useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
-import BottomNav from './components/BottomNav';
 import Login from './pages/Login';
 import Unauthorized from './pages/Unauthorized';
 
@@ -66,11 +65,14 @@ export default function App() {
     return <Unauthorized />;
   }
 
+  const activeTab = isAdmin ? adminTab : salesmanTab;
+  const handleSelectTab = isAdmin ? setAdminTab : setSalesmanTab;
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
-      <Navbar />
+      <Navbar activeTab={activeTab} onSelectTab={handleSelectTab} />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 pt-4">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
         <Suspense fallback={<PageLoadingSkeleton />}>
           {isAdmin && (
             <>
@@ -95,11 +97,6 @@ export default function App() {
           )}
         </Suspense>
       </main>
-
-      <BottomNav
-        activeTab={isAdmin ? adminTab : salesmanTab}
-        onSelectTab={isAdmin ? setAdminTab : setSalesmanTab}
-      />
     </div>
   );
 }

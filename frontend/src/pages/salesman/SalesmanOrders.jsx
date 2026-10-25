@@ -57,7 +57,7 @@ export default function SalesmanOrders() {
   });
 
   return (
-    <div className="space-y-4 pb-20">
+    <div className="space-y-4 pb-8">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold text-slate-900">My Orders</h2>
         <span className="text-xs text-slate-500 font-semibold">{filtered.length} Orders</span>

@@ -65,7 +65,7 @@ export default function SalesmanHome({ onNavigate }) {
   const pendingDeliveries = orders.filter(o => o.status === 'PLACED');
 
   return (
-    <div className="space-y-5 pb-20">
+    <div className="space-y-5 pb-8">
       {/* Welcome Greeting */}
       <div className="bg-gradient-to-r from-brand-800 to-brand-900 text-white rounded-2xl p-5 shadow-sm">
         <span className="text-xs font-semibold text-brand-200 uppercase tracking-wider">Salesman Dashboard</span>

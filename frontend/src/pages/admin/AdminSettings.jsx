@@ -66,7 +66,7 @@ export default function AdminSettings() {
   const isGstinMissing = !formData.gstin || !formData.gstin.trim();
 
   return (
-    <div className="space-y-4 pb-24 max-w-3xl mx-auto">
+    <div className="space-y-4 pb-8 max-w-3xl mx-auto">
       <div>
         <h2 className="text-xl font-black text-slate-900">Business & Invoicing Settings</h2>
         <p className="text-xs text-slate-500 font-medium">Configure legal identity, tax treatment & GST compliance</p>

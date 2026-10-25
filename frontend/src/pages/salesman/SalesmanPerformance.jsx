@@ -45,7 +45,7 @@ export default function SalesmanPerformance() {
     }));
 
   return (
-    <div className="space-y-4 pb-20">
+    <div className="space-y-4 pb-8">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-bold text-slate-900">My Performance</h2>

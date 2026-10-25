@@ -131,7 +131,7 @@ export default function AdminOrders() {
   });
 
   return (
-    <div className="space-y-4 pb-24">
+    <div className="space-y-4 pb-8">
       {/* Page Title */}
       <div className="flex items-center justify-between">
         <div>

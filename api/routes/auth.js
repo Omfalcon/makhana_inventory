@@ -152,7 +152,8 @@ router.patch('/salesman/:id', authenticate, requireRole('ADMIN'), async (req, re
         }
 
         // Fetch auth user to compare current email
-        const { data: { user: authUser } } = await supabaseAdmin.auth.admin.getUserById(id);
+        const authUserRes = await supabaseAdmin.auth.admin.getUserById(id);
+        const authUser = authUserRes?.data?.user;
         const currentAuthEmail = (authUser?.email || '').toLowerCase();
 
         let updatedEmail = currentAuthEmail;
@@ -229,6 +230,13 @@ router.post('/resolve-salesman-phone', async (req, res) => {
 
         const last10 = digits.slice(-10);
 
+        if (!supabaseAdmin) {
+            return res.status(500).json({
+                success: false,
+                message: 'Server configuration error: SUPABASE_SERVICE_ROLE_KEY is missing from environment variables.'
+            });
+        }
+
         // Fetch profiles - check salesmen first
         const { data: profiles, error: profileErr } = await supabaseAdmin
             .from('profiles')
@@ -269,9 +277,10 @@ router.post('/resolve-salesman-phone', async (req, res) => {
         }
 
         // Fetch auth user to get login email
-        const { data: { user }, error: userErr } = await supabaseAdmin.auth.admin.getUserById(matched.id);
+        const userRes = await supabaseAdmin.auth.admin.getUserById(matched.id);
+        const user = userRes?.data?.user;
 
-        if (userErr || !user) {
+        if (userRes?.error || !user || !user.email) {
             return res.status(404).json({
                 success: false,
                 message: 'Authentication record not found for this account.'
@@ -286,7 +295,7 @@ router.post('/resolve-salesman-phone', async (req, res) => {
         });
     } catch (err) {
         console.error('Error resolving phone:', err);
-        return res.status(500).json({ success: false, message: 'Unable to resolve phone number. Please try again.' });
+        return res.status(500).json({ success: false, message: err.message || 'Unable to resolve phone number.' });
     }
 });
 

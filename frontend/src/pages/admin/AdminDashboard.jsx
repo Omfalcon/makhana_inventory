@@ -91,7 +91,7 @@ export default function AdminDashboard({ onNavigate }) {
   }));
 
   return (
-    <div className="space-y-5 pb-24">
+    <div className="space-y-5 pb-8">
       {/* Realtime Notification Banner */}
       {realtimeNotice && (
         <div className="p-2.5 bg-emerald-600 text-white rounded-xl text-xs font-bold text-center animate-pulse flex items-center justify-center gap-1.5 shadow-md">

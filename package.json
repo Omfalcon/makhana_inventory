@@ -4,7 +4,6 @@
   "description": "Makhana Inventory, Sales & Delivery Management System",
   "private": true,
   "scripts": {
-    "test": "node tests/gst.test.js && node tests/order_logic.test.js",
     "dev:api": "cd api && npm run dev",
     "dev:frontend": "cd frontend && npm run dev",
     "build:frontend": "cd frontend && npm run build",

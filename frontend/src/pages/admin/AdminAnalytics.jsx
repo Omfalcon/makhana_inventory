@@ -183,7 +183,7 @@ export default function AdminAnalytics() {
     }));
 
   return (
-    <div className="space-y-4 pb-24">
+    <div className="space-y-4 pb-8">
       {/* Page Title & Preset Filters */}
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between">

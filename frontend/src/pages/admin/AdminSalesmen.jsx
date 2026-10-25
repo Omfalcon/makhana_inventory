@@ -205,7 +205,7 @@ export default function AdminSalesmen() {
   };
 
   return (
-    <div className="space-y-4 pb-24">
+    <div className="space-y-4 pb-8">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
