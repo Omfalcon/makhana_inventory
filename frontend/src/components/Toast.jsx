@@ -7,29 +7,29 @@ export default function Toast({ message, type = 'info', onClose }) {
 
   const config = {
     success: {
-      bg: 'bg-emerald-50 border-emerald-200 text-emerald-900',
-      icon: <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+      bg: 'bg-emerald-50/95 border border-emerald-200 text-emerald-950',
+      icon: <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
     },
     error: {
-      bg: 'bg-rose-50 border-rose-200 text-rose-900',
-      icon: <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
+      bg: 'bg-rose-50/95 border border-rose-200 text-rose-950',
+      icon: <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
     },
     info: {
-      bg: 'bg-blue-50 border-blue-200 text-blue-900',
-      icon: <Info className="w-5 h-5 text-blue-600 shrink-0" />
+      bg: 'bg-white/95 border border-slate-200 text-slate-900',
+      icon: <Info className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
     }
   }[type] || {
-    bg: 'bg-slate-50 border-slate-200 text-slate-900',
-    icon: <Info className="w-5 h-5 text-slate-600 shrink-0" />
+    bg: 'bg-white/95 border border-slate-200 text-slate-900',
+    icon: <Info className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
   };
 
   return (
-    <div className="fixed top-20 right-4 left-4 sm:left-auto sm:w-96 z-50 transition-all animate-bounce-short">
-      <div className={`flex items-start gap-3 p-4 rounded-xl border shadow-lg ${config.bg}`}>
+    <div className="fixed top-18 right-3 left-3 sm:left-auto sm:w-96 z-50">
+      <div className={`flex items-start gap-3 p-3.5 rounded-xl border shadow-lg backdrop-blur-md ${config.bg}`}>
         {config.icon}
-        <div className="flex-1 text-sm font-medium">{message}</div>
+        <div className="flex-1 text-sm font-semibold">{message}</div>
         {onClose && (
-          <button onClick={onClose} className="p-1 hover:opacity-70 transition">
+          <button onClick={onClose} className="p-1 rounded-lg hover:bg-slate-200/50 text-slate-700 transition">
             <X className="w-4 h-4" />
           </button>
         )}

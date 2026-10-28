@@ -20,9 +20,7 @@ import {
   Phone,
   MapPin,
   Eye,
-  Printer,
-  ChevronDown,
-  ChevronUp
+  Printer
 } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
 
@@ -41,12 +39,11 @@ export default function AdminAnalytics() {
   const [loading, setLoading] = useState(true);
   const [analytics, setAnalytics] = useState(null);
 
-  // Modals for Order Details and Invoice Printing
+  // Modals
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [activeInvoice, setActiveInvoice] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
 
-  // Load salesmen list for the dropdown
   useEffect(() => {
     api.auth.getSalesmen().then(res => {
       setSalesmenList(res.salesmen || []);
@@ -123,7 +120,6 @@ export default function AdminAnalytics() {
   const orders = analytics?.orders || [];
   const dailyTrends = analytics?.dailyTrends || [];
 
-  // Selected Salesman Details or Overall
   const selectedSalesmanObj = selectedSalesmanId
     ? (salesmenList.find(s => s.id === selectedSalesmanId) || salesmen.find(s => s.id === selectedSalesmanId) || null)
     : null;
@@ -136,12 +132,10 @@ export default function AdminAnalytics() {
     ? selectedSalesmanName.trim().split(' ')[0]
     : '';
 
-  // Filtered orders for the selected salesman (or all if none selected)
   const displayOrders = selectedSalesmanId
     ? orders.filter(o => o.salesman_id === selectedSalesmanId)
     : orders;
 
-  // Calculate comprehensive totals for the active view
   const totalOrdersCount = displayOrders.length;
   const deliveredOrdersCount = displayOrders.filter(o => o.status === 'DELIVERED').length;
   const placedOrdersCount = displayOrders.filter(o => o.status === 'PLACED').length;
@@ -159,20 +153,17 @@ export default function AdminAnalytics() {
     return sum + orderUnits;
   }, 0);
 
-  // Products Tab Totals
   const totalWarehouseStock = products.reduce((sum, p) => sum + (p.stockRemaining || 0), 0);
   const totalProductsUnitsSold = products.reduce((sum, p) => sum + (p.unitsSold || 0), 0);
   const totalProductsRevenuePaise = products.reduce((sum, p) => sum + (p.deliveredRevenuePaise || 0), 0);
 
-  // Compute Daily Trend specifically for the selected view
   const trendChartData = dailyTrends.map(d => ({
-    date: d.date.substring(5), // MM-DD
+    date: d.date.substring(5),
     orders: d.ordersCount,
     revenue: Math.round(d.deliveredRevenuePaise / 100),
     totalBooked: Math.round(d.totalRevenuePaise / 100)
   }));
 
-  // Top 5 products by quantity
   const topProductsChart = [...products]
     .sort((a, b) => b.unitsSold - a.unitsSold)
     .slice(0, 5)
@@ -183,37 +174,41 @@ export default function AdminAnalytics() {
     }));
 
   return (
-    <div className="space-y-4 pb-8">
-      {/* Page Title & Preset Filters */}
+    <div className="space-y-5 pb-12">
+      {/* Title & Preset Filters */}
       <div className="flex flex-col gap-3">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs">
           <div>
-            <h2 className="text-xl font-black text-slate-900">Business Analytics</h2>
-            <p className="text-xs text-slate-500 font-medium">Salesman tracking, daily orders & revenue graphs</p>
+            <h2 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
+              Sales Analytics
+            </h2>
+            <p className="text-xs font-semibold text-slate-500">Salesman tracking, daily orders & revenue reports</p>
           </div>
           <button
             onClick={loadAnalytics}
-            className="p-2 bg-white rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 shadow-xs transition"
+            className="p-2.5 bg-slate-100/80 border border-slate-200 text-slate-700 hover:bg-slate-200/80 rounded-xl transition shadow-xs"
             title="Refresh"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 text-emerald-700 ${loading ? 'animate-spin' : ''}`} />
           </button>
         </div>
 
-        {/* Date Presets + Custom Option */}
-        <div className="flex items-center gap-1.5 bg-slate-200/70 p-1 rounded-xl text-xs font-bold text-slate-600 overflow-x-auto">
+        {/* Date Presets */}
+        <div className="flex items-center gap-1.5 p-1.5 bg-white border border-slate-200/90 rounded-2xl text-xs font-bold overflow-x-auto shadow-xs">
           {[
             { id: 'today', label: 'Today' },
             { id: 'yesterday', label: 'Yesterday' },
-            { id: '7d', label: 'Last 7 Days' },
-            { id: '30d', label: 'Last 30 Days' },
-            { id: 'custom', label: '📅 Custom' }
+            { id: '7d', label: '7 Days' },
+            { id: '30d', label: '30 Days' },
+            { id: 'custom', label: 'Custom' }
           ].map((item) => (
             <button
               key={item.id}
               onClick={() => setPreset(item.id)}
-              className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition ${
-                preset === item.id ? 'bg-white text-slate-900 shadow-xs' : 'hover:text-slate-900'
+              className={`px-4 py-2 rounded-xl uppercase whitespace-nowrap transition text-xs font-bold ${
+                preset === item.id
+                  ? 'bg-emerald-700 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
               }`}
             >
               {item.label}
@@ -223,47 +218,47 @@ export default function AdminAnalytics() {
 
         {/* Custom Date Range Picker Form */}
         {preset === 'custom' && (
-          <form onSubmit={handleApplyCustomDate} className="bg-white p-3 rounded-xl border border-slate-200 shadow-xs flex flex-wrap items-center gap-2 text-xs">
-            <span className="font-bold text-slate-700">From:</span>
+          <form onSubmit={handleApplyCustomDate} className="bg-white p-4 border border-slate-200/90 rounded-2xl flex flex-wrap items-center gap-3 text-xs font-bold shadow-xs">
+            <span className="font-bold text-slate-700 uppercase">From:</span>
             <input
               type="date"
               value={customStart}
               onChange={(e) => setCustomStart(e.target.value)}
-              className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-mono"
+              className="px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-mono font-semibold focus:outline-none focus:ring-1 focus:ring-emerald-600"
             />
-            <span className="font-bold text-slate-700">To:</span>
+            <span className="font-bold text-slate-700 uppercase">To:</span>
             <input
               type="date"
               value={customEnd}
               onChange={(e) => setCustomEnd(e.target.value)}
-              className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-mono"
+              className="px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-mono font-semibold focus:outline-none focus:ring-1 focus:ring-emerald-600"
             />
             <button
               type="submit"
-              className="px-3.5 py-1.5 bg-brand-700 hover:bg-brand-800 text-white font-bold rounded-lg transition shadow-xs"
+              className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold uppercase text-xs rounded-xl transition shadow-xs"
             >
-              Apply Range
+              Apply Filter
             </button>
           </form>
         )}
       </div>
 
-      {/* Filter by Sales Representative (Universal Filter for Both Salesmen & Products tabs) */}
-      <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      {/* Filter by Salesman */}
+      <div className="bg-white p-5 border border-slate-200/90 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
         <div>
-          <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">
-            Filter by Sales Representative
+          <span className="text-xs uppercase font-bold text-slate-500 tracking-wider block">
+            Filter by Salesman
           </span>
-          <h3 className="font-bold text-slate-900 text-sm sm:text-base mt-0.5">
+          <h3 className="font-bold text-slate-900 text-base mt-0.5">
             {selectedSalesmanName || 'Overall Business (All Salesmen)'}
           </h3>
         </div>
 
-        <div className="w-full sm:w-72">
+        <div className="w-full sm:w-80">
           <select
             value={selectedSalesmanId}
             onChange={(e) => setSelectedSalesmanId(e.target.value)}
-            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-600"
+            className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs sm:text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-600"
           >
             <option value="">All Salesmen (Overall Business)</option>
             {salesmenList.map((sm) => (
@@ -275,139 +270,123 @@ export default function AdminAnalytics() {
         </div>
       </div>
 
-      {/* Main Tabs: Salesman Analytics vs Product Rankings */}
-      <div className="flex bg-slate-100 p-1 rounded-xl text-xs font-bold text-slate-600">
+      {/* Main Tabs */}
+      <div className="flex p-1.5 bg-slate-200/60 rounded-2xl gap-1.5 text-xs sm:text-sm font-bold">
         <button
           onClick={() => setActiveTab('SALESMEN')}
-          className={`flex-1 py-2 rounded-lg transition ${
-            activeTab === 'SALESMEN' ? 'bg-white text-slate-900 shadow-xs' : 'hover:text-slate-900'
+          className={`flex-1 py-2.5 px-3 rounded-xl uppercase text-center transition ${
+            activeTab === 'SALESMEN'
+              ? 'bg-white text-emerald-800 shadow-xs'
+              : 'text-slate-600 hover:text-slate-900'
           }`}
         >
-          Salesman Performance & Field Orders
+          Salesman Performance & Orders
         </button>
         <button
           onClick={() => setActiveTab('PRODUCTS')}
-          className={`flex-1 py-2 rounded-lg transition ${
-            activeTab === 'PRODUCTS' ? 'bg-white text-slate-900 shadow-xs' : 'hover:text-slate-900'
+          className={`flex-1 py-2.5 px-3 rounded-xl uppercase text-center transition ${
+            activeTab === 'PRODUCTS'
+              ? 'bg-white text-emerald-800 shadow-xs'
+              : 'text-slate-600 hover:text-slate-900'
           }`}
         >
-          Product Rankings & Stock {selectedSalesmanFirstName ? `(${selectedSalesmanFirstName})` : ''}
+          Product Sales & Stock {selectedSalesmanFirstName ? `(${selectedSalesmanFirstName})` : ''}
         </button>
       </div>
 
       {loading ? (
-        <div className="p-8 text-center text-slate-400 text-sm">Loading analytics reports...</div>
+        <div className="p-8 text-center text-slate-500 font-semibold bg-white border border-slate-200 rounded-2xl shadow-xs">
+          Loading analytics reports...
+        </div>
       ) : activeTab === 'SALESMEN' ? (
         <div className="space-y-4">
-
-          {/* KPI Summary Cards (Full Totals Displayed) */}
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-            {/* Card 1: Total Sales Booked */}
-            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs col-span-2 sm:col-span-1">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Sales Value</span>
-              <span className="text-xl sm:text-2xl font-black text-slate-900 font-mono mt-1 block truncate">
+          {/* KPI Summary Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            <div className="bg-white p-4 border border-slate-200/90 rounded-2xl shadow-xs">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Total Booked</span>
+              <span className="text-2xl font-black text-slate-900 font-mono mt-1 block truncate">
                 {formatPaise(totalSalesPaise, false)}
               </span>
-              <span className="text-[10px] text-slate-400">Placed + Delivered</span>
+              <span className="text-xs text-slate-500 font-semibold">Placed + Delivered</span>
             </div>
 
-            {/* Card 2: Delivered Cash Collected */}
-            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Delivered Revenue</span>
-              <span className="text-lg sm:text-xl font-black text-emerald-700 font-mono mt-1 block truncate">
+            <div className="bg-emerald-50/50 p-4 border border-emerald-200/80 rounded-2xl shadow-xs">
+              <span className="text-xs font-bold text-emerald-800 uppercase tracking-wider block">Delivered Cash</span>
+              <span className="text-2xl font-black text-emerald-800 font-mono mt-1 block truncate">
                 {formatPaise(deliveredRevenuePaise, false)}
               </span>
-              <span className="text-[10px] text-slate-400">Cash collected</span>
+              <span className="text-xs text-emerald-700/80 font-semibold">Cash collected</span>
             </div>
 
-            {/* Card 3: Total Orders */}
-            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Orders</span>
-              <span className="text-2xl font-black text-slate-900 mt-1 block">
+            <div className="bg-white p-4 border border-slate-200/90 rounded-2xl shadow-xs">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Total Orders</span>
+              <span className="text-3xl font-black text-slate-900 mt-1 block font-mono">
                 {totalOrdersCount}
               </span>
-              <span className="text-[10px] text-slate-400">
-                {deliveredOrdersCount} del • {placedOrdersCount} placed
+              <span className="text-xs text-slate-500 font-semibold">
+                {deliveredOrdersCount} del • {placedOrdersCount} pending
               </span>
             </div>
 
-            {/* Card 4: Placed Orders (Pending Delivery) */}
-            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Placed Orders</span>
-              <span className="text-2xl font-black text-amber-600 mt-1 block">
+            <div className="bg-amber-50/50 p-4 border border-amber-200/80 rounded-2xl shadow-xs">
+              <span className="text-xs font-bold text-amber-900 uppercase tracking-wider block">Pending Orders</span>
+              <span className="text-3xl font-black text-amber-800 mt-1 block font-mono">
                 {placedOrdersCount}
               </span>
-              <span className="text-[10px] text-slate-400 font-mono truncate block">
+              <span className="text-xs text-amber-700 font-semibold font-mono">
                 {formatPaise(placedRevenuePaise, false)} pending
               </span>
             </div>
 
-            {/* Card 5: Total Units Sold */}
-            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Items Sold</span>
-              <span className="text-2xl font-black text-brand-700 font-mono mt-1 block">
+            <div className="bg-white p-4 border border-slate-200/90 rounded-2xl shadow-xs">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Items Sold</span>
+              <span className="text-3xl font-black text-slate-900 font-mono mt-1 block">
                 {formatNumber(totalUnitsOrdered)}
               </span>
-              <span className="text-[10px] text-slate-400">Packets ordered</span>
+              <span className="text-xs text-slate-500 font-semibold">Packets ordered</span>
             </div>
           </div>
 
-          {/* Dual Bar Charts: Orders per Day & Revenue per Day */}
+          {/* Dual Bar Charts */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {/* Chart 1: Daily Orders Count */}
-            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                    Orders Per Day
-                  </h3>
-                  <p className="text-[11px] text-slate-400">Daily order-taking volume</p>
-                </div>
-                <ShoppingBag className="w-4 h-4 text-brand-600" />
-              </div>
-
+            <div className="bg-white p-5 border border-slate-200/90 rounded-2xl shadow-xs">
+              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-4 border-b border-slate-100 pb-2">
+                Orders Per Day
+              </h3>
               {trendChartData.length === 0 ? (
-                <div className="h-44 flex items-center justify-center text-xs text-slate-400">
+                <div className="h-44 flex items-center justify-center text-xs text-slate-500 font-semibold">
                   No orders recorded for this period.
                 </div>
               ) : (
                 <div className="h-48 w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={trendChartData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
-                      <XAxis dataKey="date" tick={{ fontSize: 10 }} />
-                      <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
+                      <XAxis dataKey="date" tick={{ fontSize: 11, fontWeight: '600', fill: '#6B665A' }} />
+                      <YAxis allowDecimals={false} tick={{ fontSize: 11, fontWeight: '600', fill: '#6B665A' }} />
                       <Tooltip formatter={(value) => [`${value} orders`, 'Orders']} />
-                      <Bar dataKey="orders" fill="#047857" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="orders" fill="#17382B" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
               )}
             </div>
 
-            {/* Chart 2: Daily Revenue (₹ Rs Graph) */}
-            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                    Revenue Per Day (₹ INR)
-                  </h3>
-                  <p className="text-[11px] text-slate-400">Delivered cash value collected</p>
-                </div>
-                <TrendingUp className="w-4 h-4 text-emerald-600" />
-              </div>
-
+            <div className="bg-white p-5 border border-slate-200/90 rounded-2xl shadow-xs">
+              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-4 border-b border-slate-100 pb-2">
+                Revenue Per Day (₹ INR)
+              </h3>
               {trendChartData.length === 0 ? (
-                <div className="h-44 flex items-center justify-center text-xs text-slate-400">
+                <div className="h-44 flex items-center justify-center text-xs text-slate-500 font-semibold">
                   No revenue recorded for this period.
                 </div>
               ) : (
                 <div className="h-48 w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={trendChartData} margin={{ top: 5, right: 5, left: -10, bottom: 0 }}>
-                      <XAxis dataKey="date" tick={{ fontSize: 10 }} />
-                      <YAxis tick={{ fontSize: 10 }} />
+                      <XAxis dataKey="date" tick={{ fontSize: 11, fontWeight: '600', fill: '#6B665A' }} />
+                      <YAxis tick={{ fontSize: 11, fontWeight: '600', fill: '#6B665A' }} />
                       <Tooltip formatter={(value) => [`₹${value}`, 'Delivered Revenue']} />
-                      <Bar dataKey="revenue" fill="#10b981" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="revenue" fill="#1F5C3B" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -415,121 +394,68 @@ export default function AdminAnalytics() {
             </div>
           </div>
 
-          {/* Orders Breakdown Table with Visible Items & Totals */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-            {/* Header with Detailed Aggregate Summary */}
-            <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          {/* Orders Breakdown */}
+          <div className="bg-white border border-slate-200/90 rounded-2xl shadow-xs overflow-hidden">
+            <div className="p-4 bg-slate-50/70 border-b border-slate-200/80 flex justify-between items-center">
               <div>
                 <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
                   {selectedSalesmanObj ? `${selectedSalesmanObj.name}'s Field Orders` : 'All Field Orders'}
                 </h4>
-                <span className="text-[11px] text-slate-500 font-medium">
+                <span className="text-xs text-slate-500 font-semibold">
                   {displayOrders.length} orders • {totalUnitsOrdered} total packets ordered
                 </span>
               </div>
 
-              {/* Aggregated Totals Pill */}
-              <div className="flex items-center gap-3 bg-white px-3.5 py-2 rounded-xl border border-slate-200 shadow-xs">
-                <div>
-                  <span className="text-[10px] text-slate-400 font-bold uppercase block">Total Sales</span>
-                  <span className="font-mono font-black text-xs sm:text-sm text-slate-900">
-                    {formatPaise(totalSalesPaise)}
-                  </span>
-                </div>
-                <div className="h-6 w-px bg-slate-200" />
-                <div>
-                  <span className="text-[10px] text-slate-400 font-bold uppercase block">Delivered Cash</span>
-                  <span className="font-mono font-black text-xs sm:text-sm text-emerald-700">
-                    {formatPaise(deliveredRevenuePaise)}
-                  </span>
-                </div>
+              <div className="flex items-center gap-3 bg-white px-3 py-1.5 border border-slate-200 rounded-lg shadow-xs">
+                <span className="text-xs font-bold uppercase text-slate-800">Total: {formatPaise(totalSalesPaise)}</span>
               </div>
             </div>
 
             {displayOrders.length === 0 ? (
-              <div className="p-8 text-center text-slate-400 text-xs">
-                No orders recorded for this selection in the chosen period.
+              <div className="p-8 text-center text-slate-500 text-xs font-semibold">
+                No orders recorded for this selection.
               </div>
             ) : (
               <div className="divide-y divide-slate-100">
                 {displayOrders.map((order) => (
-                  <div key={order.id} className="p-4 hover:bg-slate-50/50 transition">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                      {/* Customer Name & Details */}
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-xs font-bold text-brand-800 bg-brand-50 px-2 py-0.5 rounded border border-brand-200">
-                            {order.order_number || 'N/A'}
-                          </span>
-                          <OrderStatusBadge status={order.status} />
-                        </div>
-                        <h5 className="font-bold text-slate-900 text-sm sm:text-base">
-                          {order.customer_name || 'Customer'}
-                        </h5>
-                        <div className="text-xs text-slate-500 flex flex-wrap items-center gap-x-3 gap-y-1">
-                          <span className="flex items-center gap-1 font-mono">
-                            <Phone className="w-3.5 h-3.5 text-slate-400" />
-                            <a href={`tel:${order.customer_phone}`} className="hover:underline text-slate-700">
-                              {order.customer_phone || '-'}
-                            </a>
-                          </span>
-                          <span>•</span>
-                          <span>{formatDateTime(order.created_at)}</span>
-                          <span>•</span>
-                          <span className="font-semibold text-slate-700">
-                            Salesman: {order.salesman?.full_name || 'Field Salesman'}
-                          </span>
-                        </div>
-                        {order.customer_address && (
-                          <div className="text-xs text-slate-400 flex items-center gap-1">
-                            <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
-                            <span className="truncate max-w-md">{order.customer_address}</span>
-                          </div>
-                        )}
+                  <div key={order.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/50 transition">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs font-bold bg-slate-100 text-slate-800 px-2 py-0.5 rounded-md border border-slate-200">
+                          #{order.order_number || 'N/A'}
+                        </span>
+                        <OrderStatusBadge status={order.status} />
                       </div>
+                      <h5 className="font-bold text-slate-900 text-base">
+                        {order.customer_name || 'Customer'}
+                      </h5>
+                      <div className="text-xs text-slate-500 font-semibold flex flex-wrap items-center gap-x-3 gap-y-1">
+                        <span>Phone: {order.customer_phone || '-'}</span>
+                        <span>•</span>
+                        <span>{formatDateTime(order.created_at)}</span>
+                        <span>•</span>
+                        <span>Salesman: {order.salesman?.full_name || 'Field Salesman'}</span>
+                      </div>
+                    </div>
 
-                      {/* Order Value & Action Buttons */}
-                      <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
-                        <div>
-                          <span className="text-[10px] text-slate-400 uppercase font-bold block sm:text-right">
-                            Order Value
-                          </span>
-                          <span className="text-base sm:text-lg font-black text-emerald-800 font-mono block">
-                            {formatPaise(order.total_amount_paise || 0)}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            onClick={() => openOrderDetails(order.id)}
-                            className="p-1.5 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-semibold transition"
-                            title="Full Order Details"
-                          >
-                            <Eye className="w-3.5 h-3.5" />
-                          </button>
-
-                          <button
-                            onClick={() => handleGenerateInvoice(order.id)}
-                            disabled={actionLoading}
-                            className="flex items-center gap-1 px-2.5 py-1.5 bg-brand-50 text-brand-800 hover:bg-brand-100 rounded-lg text-xs font-bold transition border border-brand-200"
-                            title="Generate GST Invoice"
-                          >
-                            <Printer className="w-3.5 h-3.5" />
-                            <span>Bill</span>
-                          </button>
-
-                          {order.status === 'PLACED' && (
-                            <button
-                              onClick={() => handleMarkDelivered(order.id)}
-                              disabled={actionLoading}
-                              className="flex items-center gap-1 px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition shadow-xs"
-                              title="Mark Delivered"
-                            >
-                              <CheckCircle2 className="w-3.5 h-3.5" />
-                              <span>Deliver</span>
-                            </button>
-                          )}
-                        </div>
+                    <div className="flex sm:flex-col items-center sm:items-end justify-between gap-2 shrink-0">
+                      <span className="text-base sm:text-lg font-black text-slate-900 font-mono">
+                        {formatPaise(order.total_amount_paise || 0)}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => openOrderDetails(order.id)}
+                          className="px-3 py-1.5 text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 text-xs font-bold uppercase rounded-lg transition shadow-xs"
+                        >
+                          View
+                        </button>
+                        <button
+                          onClick={() => handleGenerateInvoice(order.id)}
+                          disabled={actionLoading}
+                          className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-800 text-xs font-bold uppercase rounded-lg transition shadow-xs"
+                        >
+                          Bill
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -540,60 +466,56 @@ export default function AdminAnalytics() {
         </div>
       ) : (
         <div className="space-y-4">
-          {/* Products Summary Banner */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Catalog Products</span>
-              <span className="text-2xl font-black text-slate-900 mt-1 block">{products.length}</span>
-              <span className="text-[10px] text-slate-400">Active makhana SKUs</span>
+          {/* Products Summary */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="bg-white p-4 border border-slate-200/90 rounded-2xl shadow-xs">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Total Products</span>
+              <span className="text-3xl font-black text-slate-900 mt-1 block font-mono">{products.length}</span>
+              <span className="text-xs text-slate-500 font-semibold">Active makhana SKUs</span>
             </div>
 
-            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Warehouse Stock</span>
-              <span className="text-2xl font-black text-slate-900 font-mono mt-1 block">
+            <div className="bg-white p-4 border border-slate-200/90 rounded-2xl shadow-xs">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Warehouse Stock</span>
+              <span className="text-3xl font-black text-slate-900 font-mono mt-1 block">
                 {formatNumber(totalWarehouseStock)}
               </span>
-              <span className="text-[10px] text-slate-400">Packets in inventory</span>
+              <span className="text-xs text-slate-500 font-semibold">Packets in inventory</span>
             </div>
 
-            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                {selectedSalesmanFirstName ? `${selectedSalesmanFirstName}'s Units Sold` : `Units Sold (${preset})`}
-              </span>
-              <span className="text-2xl font-black text-brand-700 font-mono mt-1 block">
+            <div className="bg-white p-4 border border-slate-200/90 rounded-2xl shadow-xs">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Units Sold</span>
+              <span className="text-3xl font-black text-slate-900 font-mono mt-1 block">
                 {formatNumber(totalProductsUnitsSold)}
               </span>
-              <span className="text-[10px] text-slate-400">Packets ordered</span>
+              <span className="text-xs text-slate-500 font-semibold">Packets ordered</span>
             </div>
 
-            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                {selectedSalesmanFirstName ? `${selectedSalesmanFirstName}'s Revenue` : `Delivered Revenue (${preset})`}
-              </span>
-              <span className="text-xl font-black text-emerald-700 font-mono mt-1 block truncate">
+            <div className="bg-emerald-50/50 p-4 border border-emerald-200/80 rounded-2xl shadow-xs">
+              <span className="text-xs font-bold text-emerald-800 uppercase tracking-wider block">Delivered Revenue</span>
+              <span className="text-2xl font-black text-emerald-800 font-mono mt-1 block truncate">
                 {formatPaise(totalProductsRevenuePaise, false)}
               </span>
-              <span className="text-[10px] text-slate-400">Cash realized</span>
+              <span className="text-xs text-emerald-700/80 font-semibold">Cash realized</span>
             </div>
           </div>
 
           {/* Top Products Bar Chart */}
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
-            <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-4">
-              {selectedSalesmanName ? `Top Products Sold by ${selectedSalesmanName} (${preset})` : `Top Products by Units Sold (${preset})`}
+          <div className="bg-white p-5 border border-slate-200/90 rounded-2xl shadow-xs">
+            <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-4 border-b border-slate-100 pb-2">
+              Top Products by Units Sold ({preset})
             </h3>
             {topProductsChart.length === 0 || topProductsChart.every(p => p.units === 0) ? (
-              <div className="h-40 flex items-center justify-center text-xs text-slate-400">
+              <div className="h-40 flex items-center justify-center text-xs text-slate-500 font-semibold">
                 No units ordered in this period.
               </div>
             ) : (
               <div className="h-48 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={topProductsChart} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
-                    <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-                    <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
+                    <XAxis dataKey="name" tick={{ fontSize: 11, fontWeight: '600', fill: '#6B665A' }} />
+                    <YAxis allowDecimals={false} tick={{ fontSize: 11, fontWeight: '600', fill: '#6B665A' }} />
                     <Tooltip />
-                    <Bar dataKey="units" fill="#047857" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="units" fill="#17382B" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -601,69 +523,39 @@ export default function AdminAnalytics() {
           </div>
 
           {/* Product Sales Breakdown Table */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-            <div className="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
-              <div>
-                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
-                  {selectedSalesmanName ? `${selectedSalesmanName}'s Product Sales & Stock Breakdown` : 'All Products Sales & Stock Breakdown'}
-                </span>
-                <span className="text-[11px] text-slate-400 font-medium">
-                  {selectedSalesmanName ? `Filtered for ${selectedSalesmanName}` : 'Showing all sales team contributions'}
-                </span>
-              </div>
-              <span className="text-xs text-slate-400 font-medium">{products.length} products</span>
+          <div className="bg-white border border-slate-200/90 rounded-2xl shadow-xs overflow-hidden">
+            <div className="p-4 bg-slate-50/70 border-b border-slate-200/80 flex justify-between items-center">
+              <span className="text-xs font-bold text-slate-800 uppercase tracking-wider block">
+                Product Sales & Stock Breakdown
+              </span>
+              <span className="text-xs text-slate-500 font-semibold">{products.length} products</span>
             </div>
             <div className="divide-y divide-slate-100">
               {products.map((p) => (
                 <div key={p.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/50 transition">
                   <div className="space-y-1">
-                    <h4 className="font-bold text-slate-900 text-sm">{p.name}</h4>
-                    <span className="font-mono text-xs text-slate-400 block">{p.sku}</span>
-
-                    {/* Salesman Breakdown Chips */}
-                    {p.bySalesman && p.bySalesman.length > 0 && (
-                      <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                        <span className="text-[10px] uppercase font-bold text-slate-400">By Salesman:</span>
-                        {p.bySalesman.map((sm) => (
-                          <span
-                            key={sm.id}
-                            className={`px-2 py-0.5 rounded-md text-[11px] flex items-center gap-1 border ${
-                              selectedSalesmanId === sm.id
-                                ? 'bg-brand-50 text-brand-900 border-brand-300 font-bold'
-                                : 'bg-slate-100 text-slate-700 border-slate-200 font-medium'
-                            }`}
-                          >
-                            <span>{sm.name}:</span>
-                            <span className="font-mono font-bold">{sm.unitsSold} pkts</span>
-                            <span className="text-slate-400 text-[10px]">({formatPaise(sm.deliveredRevenuePaise)})</span>
-                          </span>
-                        ))}
-                      </div>
-                    )}
+                    <h4 className="font-bold text-slate-900 text-base">{p.name}</h4>
+                    <span className="font-mono text-xs font-semibold text-slate-500 block">SKU: {p.sku}</span>
                   </div>
 
-                  <div className="flex items-center gap-4 text-xs shrink-0">
+                  <div className="flex items-center gap-6 text-xs font-semibold shrink-0">
                     <div>
-                      <span className="text-[10px] text-slate-400 block uppercase">Stock Left</span>
-                      <span className={`font-mono font-bold ${p.stockRemaining <= p.lowStockThreshold ? 'text-amber-600' : 'text-slate-800'}`}>
+                      <span className="text-slate-500 block uppercase">Stock Left:</span>
+                      <span className={`font-mono font-bold text-sm ${p.stockRemaining <= p.lowStockThreshold ? 'text-amber-700' : 'text-slate-900'}`}>
                         {p.stockRemaining} pkts
                       </span>
                     </div>
 
                     <div>
-                      <span className="text-[10px] text-slate-400 block uppercase">
-                        {selectedSalesmanFirstName ? `${selectedSalesmanFirstName} Sold` : 'Units Sold'}
-                      </span>
-                      <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded">
-                        {p.unitsSold}
+                      <span className="text-slate-500 block uppercase">Sold:</span>
+                      <span className="font-mono font-bold text-sm text-slate-900 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                        {p.unitsSold} pkts
                       </span>
                     </div>
 
                     <div className="text-right">
-                      <span className="text-[10px] text-slate-400 block uppercase">
-                        {selectedSalesmanFirstName ? `${selectedSalesmanFirstName} Revenue` : 'Delivered Revenue'}
-                      </span>
-                      <span className="font-mono font-bold text-emerald-800">
+                      <span className="text-slate-500 block uppercase">Delivered Cash:</span>
+                      <span className="font-mono font-bold text-sm text-emerald-700">
                         {formatPaise(p.deliveredRevenuePaise)}
                       </span>
                     </div>
@@ -682,46 +574,44 @@ export default function AdminAnalytics() {
         title={selectedOrder ? `Order #${selectedOrder.order_number}` : ''}
       >
         {selectedOrder && (
-          <div className="space-y-4 text-xs sm:text-sm">
-            <div className="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-200">
+          <div className="space-y-4 text-xs sm:text-sm font-semibold">
+            <div className="flex justify-between items-center bg-slate-50 p-3.5 rounded-xl border border-slate-200/80">
               <div>
-                <span className="text-slate-400 text-xs block">Status</span>
+                <span className="text-slate-500 text-xs block uppercase font-bold">Status</span>
                 <OrderStatusBadge status={selectedOrder.status} />
               </div>
               <div className="text-right">
-                <span className="text-slate-400 text-xs block">Date</span>
-                <span className="font-semibold text-slate-800">{formatDateTime(selectedOrder.created_at)}</span>
+                <span className="text-slate-500 text-xs block uppercase font-bold">Date</span>
+                <span className="font-mono text-slate-900 font-semibold">{formatDateTime(selectedOrder.created_at)}</span>
               </div>
             </div>
 
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
-              <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Customer Details</span>
-              <p className="font-bold text-slate-900">{selectedOrder.customer_name}</p>
-              <p className="text-slate-600 font-mono">{selectedOrder.customer_phone}</p>
-              <p className="text-slate-600">{selectedOrder.customer_address}</p>
-              <p className="text-slate-600">Place of Supply: {selectedOrder.customer_state} ({selectedOrder.customer_state_code})</p>
+            <div className="p-3.5 bg-slate-50/70 border border-slate-200 rounded-xl space-y-1">
+              <span className="text-xs uppercase font-bold text-slate-500 tracking-wider">Customer Details</span>
+              <p className="font-bold text-slate-900 text-base">{selectedOrder.customer_name}</p>
+              <p className="text-slate-700 font-mono">Phone: {selectedOrder.customer_phone}</p>
+              <p className="text-slate-700">Address: {selectedOrder.customer_address}</p>
             </div>
 
-            {/* Items */}
             <div>
               <span className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">Order Items</span>
-              <div className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden bg-white">
+              <div className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden bg-white shadow-xs">
                 {selectedOrder.items?.map((item) => (
-                  <div key={item.id} className="p-3 flex justify-between items-center">
+                  <div key={item.id} className="p-3.5 flex justify-between items-center">
                     <div>
                       <p className="font-bold text-slate-900 text-xs">{item.product_name_snapshot}</p>
-                      <p className="font-mono text-[10px] text-slate-400">
+                      <p className="font-mono text-xs text-slate-500">
                         {item.quantity} × {formatPaise(item.unit_price_paise)}
                       </p>
                     </div>
-                    <span className="font-mono font-bold text-xs text-slate-900">
+                    <span className="font-mono font-bold text-sm text-slate-900">
                       {formatPaise(item.line_total_paise)}
                     </span>
                   </div>
                 ))}
-                <div className="p-3 bg-slate-50 flex justify-between font-bold text-xs">
+                <div className="p-3.5 bg-emerald-50/60 border-t border-emerald-100 flex justify-between font-bold text-sm text-emerald-950">
                   <span>Grand Total:</span>
-                  <span className="font-mono text-emerald-800">{formatPaise(selectedOrder.total_amount_paise)}</span>
+                  <span className="font-mono text-base font-black text-emerald-800">{formatPaise(selectedOrder.total_amount_paise)}</span>
                 </div>
               </div>
             </div>

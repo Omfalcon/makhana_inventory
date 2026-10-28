@@ -3,9 +3,34 @@
 @tailwind utilities;
 
 @layer base {
+  * {
+    box-sizing: border-box;
+  }
+
   body {
-    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: #FAF8F5;
+    color: #121411;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
     -webkit-tap-highlight-color: transparent;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* High-Density Tabular Numerals */
+  .font-mono, [data-tabular="true"] {
+    font-family: 'Inter', monospace;
+    font-variant-numeric: tabular-nums lining-nums;
+  }
+
+  /* Clear focus rings with clean deep forest pine highlight */
+  input:focus, select:focus, textarea:focus, button:focus-visible {
+    outline: 2px solid #17382B !important;
+    outline-offset: 2px !important;
+  }
+
+  /* Ensure inputs have high readability, soft corners and comfortable height */
+  input, select, textarea {
+    color: #121411;
   }
 }
 

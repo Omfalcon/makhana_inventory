@@ -103,6 +103,10 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(orderData)
     }),
+    create: (orderData) => fetchWithAuth('/orders/place', {
+      method: 'POST',
+      body: JSON.stringify(orderData)
+    }),
     list: (params = {}) => {
       const query = new URLSearchParams();
       Object.entries(params).forEach(([k, v]) => {

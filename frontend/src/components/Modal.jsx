@@ -18,24 +18,26 @@ export default function Modal({ isOpen, onClose, title, children, maxWidth = 'ma
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto no-print">
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity" onClick={onClose} />
+      {/* Soft translucent backdrop */}
+      <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity" onClick={onClose} />
       
-      <div className="min-h-full flex items-center justify-center p-3 text-center sm:p-0">
-        <div className={`relative transform overflow-hidden rounded-2xl bg-white text-left shadow-2xl transition-all sm:my-8 w-full ${maxWidth} border border-slate-100`}>
+      <div className="min-h-full flex items-center justify-center p-3 text-left sm:p-4">
+        <div className={`relative bg-white text-left transition-all sm:my-8 w-full ${maxWidth} rounded-2xl border border-slate-200/90 shadow-2xl overflow-hidden`}>
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4 bg-slate-50/50">
-            <h3 className="text-base font-bold text-slate-900">{title}</h3>
+          <div className="flex items-center justify-between border-b border-slate-200 px-5 py-3.5 bg-slate-50/80">
+            <h3 className="text-base font-bold text-slate-900 tracking-tight">{title}</h3>
             <button
               onClick={onClose}
               aria-label="Close modal"
-              className="rounded-lg p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900 rounded-lg font-bold text-xs uppercase transition shadow-xs"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
+              <span>Close</span>
             </button>
           </div>
 
           {/* Body */}
-          <div className="px-5 py-4 max-h-[80vh] overflow-y-auto">
+          <div className="p-4 sm:p-6 max-h-[80vh] overflow-y-auto bg-white">
             {children}
           </div>
         </div>

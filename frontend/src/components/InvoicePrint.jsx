@@ -16,27 +16,27 @@ export default function InvoicePrint({ invoice, onClose }) {
     : [];
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 p-2 sm:p-6 flex flex-col items-center">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs p-2 sm:p-6 flex flex-col items-center">
       {/* Action Toolbar (Hidden during print) */}
-      <div className="w-full max-w-4xl bg-white rounded-t-xl px-4 py-3 border-b border-slate-200 flex items-center justify-between shadow-md no-print mb-1">
-        <div className="flex items-center gap-2">
-          <span className="font-bold text-slate-900">Tax Invoice</span>
-          <span className="text-xs bg-brand-100 text-brand-800 font-semibold px-2 py-0.5 rounded">
+      <div className="w-full max-w-4xl bg-white px-5 py-3.5 border border-slate-200/90 rounded-2xl flex items-center justify-between shadow-lg no-print mb-3">
+        <div className="flex items-center gap-2.5">
+          <span className="font-bold text-slate-900 text-sm uppercase tracking-tight">GST Tax Invoice</span>
+          <span className="text-xs bg-emerald-50 text-emerald-800 border border-emerald-200 font-mono font-bold px-2.5 py-0.5 rounded-lg">
             {invoice.invoice_number}
           </span>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={handlePrint}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-sm font-semibold transition shadow-xs"
+            className="flex items-center gap-1.5 px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold uppercase rounded-xl transition shadow-xs"
           >
-            <Printer className="w-4 h-4" />
+            <Printer className="w-4 h-4 text-amber-300" />
             <span>Print / Save PDF</span>
           </button>
           {onClose && (
             <button
               onClick={onClose}
-              className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition"
+              className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition"
               aria-label="Close"
             >
               <X className="w-5 h-5" />
@@ -46,7 +46,7 @@ export default function InvoicePrint({ invoice, onClose }) {
       </div>
 
       {/* Printable Invoice Container (A4 portrait size) */}
-      <div className="w-full max-w-4xl bg-white p-6 sm:p-10 shadow-xl border border-slate-200 text-slate-900 text-xs sm:text-sm print:p-0 print:border-none print:shadow-none">
+      <div className="w-full max-w-4xl bg-white p-6 sm:p-10 shadow-2xl border border-slate-200/90 rounded-2xl text-slate-900 text-xs sm:text-sm print:p-0 print:border-none print:shadow-none print:rounded-none">
         {/* Header: Title and Business details */}
         <div className="border-b-2 border-slate-900 pb-4 mb-6">
           <div className="flex justify-between items-start">

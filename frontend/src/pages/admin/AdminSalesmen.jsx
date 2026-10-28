@@ -34,7 +34,7 @@ export default function AdminSalesmen() {
   const [errorMsg, setErrorMsg] = useState('');
 
   // Change Password Modal state
-  const [passwordTarget, setPasswordTarget] = useState(null); // salesman object
+  const [passwordTarget, setPasswordTarget] = useState(null);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -43,7 +43,7 @@ export default function AdminSalesmen() {
   const [passwordSuccess, setPasswordSuccess] = useState('');
 
   // Edit Salesman Modal state
-  const [editTarget, setEditTarget] = useState(null); // salesman object
+  const [editTarget, setEditTarget] = useState(null);
   const [editFormData, setEditFormData] = useState({
     fullName: '',
     email: '',
@@ -116,18 +116,17 @@ export default function AdminSalesmen() {
       await api.auth.toggleSalesmanStatus(salesman.id, !salesman.is_active);
       await loadSalesmen();
     } catch (err) {
-      alert(err.message || 'Failed to update status');
+      alert(err.message || 'Failed to update salesman status');
     }
   };
 
-  // Open Change Password Modal
   const openPasswordModal = (salesman) => {
     setPasswordTarget(salesman);
     setNewPassword('');
     setConfirmPassword('');
-    setShowNewPassword(false);
     setPasswordError('');
     setPasswordSuccess('');
+    setShowNewPassword(false);
   };
 
   const handleChangePassword = async (e) => {
@@ -135,7 +134,7 @@ export default function AdminSalesmen() {
     setPasswordError('');
     setPasswordSuccess('');
 
-    if (!newPassword || newPassword.length < 6) {
+    if (newPassword.length < 6) {
       setPasswordError('Password must be at least 6 characters long.');
       return;
     }
@@ -147,11 +146,11 @@ export default function AdminSalesmen() {
 
     try {
       setPasswordSaving(true);
-      const res = await api.auth.changeSalesmanPassword(passwordTarget.id, newPassword);
-      setPasswordSuccess(res.message || 'Password changed successfully!');
+      await api.auth.changeSalesmanPassword(passwordTarget.id, newPassword);
+      setPasswordSuccess(`Password updated successfully for ${passwordTarget.full_name}!`);
       setTimeout(() => {
         setPasswordTarget(null);
-      }, 1200);
+      }, 1500);
     } catch (err) {
       setPasswordError(err.message || 'Failed to change password.');
     } finally {
@@ -159,7 +158,6 @@ export default function AdminSalesmen() {
     }
   };
 
-  // Open Edit Salesman Modal
   const openEditModal = (salesman) => {
     setEditTarget(salesman);
     setEditFormData({
@@ -205,12 +203,14 @@ export default function AdminSalesmen() {
   };
 
   return (
-    <div className="space-y-4 pb-8">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 pb-12">
+      {/* Title Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs">
         <div>
-          <h2 className="text-xl font-black text-slate-900">Salesman Accounts</h2>
-          <p className="text-xs text-slate-500 font-medium">Provision and manage field team access & credentials</p>
+          <h2 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
+            Salesmen Accounts
+          </h2>
+          <p className="text-xs font-semibold text-slate-500">Provision and manage field team access & credentials</p>
         </div>
 
         <button
@@ -218,16 +218,16 @@ export default function AdminSalesmen() {
             setErrorMsg('');
             setShowAddModal(true);
           }}
-          className="flex items-center gap-1.5 px-3.5 py-2 bg-brand-700 hover:bg-brand-800 text-white rounded-xl text-xs font-bold shadow-xs transition"
+          className="flex items-center gap-1.5 px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold uppercase transition shadow-xs"
         >
-          <UserPlus className="w-4 h-4" />
-          <span>New Salesman</span>
+          <UserPlus className="w-4 h-4 text-amber-300" />
+          <span>+ Add Salesman</span>
         </button>
       </div>
 
       {/* Success Notification Banner */}
       {successBanner && (
-        <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs flex items-center gap-2 font-bold shadow-xs transition-all">
+        <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-950 text-xs flex items-center gap-2 font-bold rounded-xl shadow-xs">
           <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
           <span>{successBanner}</span>
         </div>
@@ -235,33 +235,34 @@ export default function AdminSalesmen() {
 
       {/* List */}
       {loading ? (
-        <div className="p-8 text-center text-slate-400 text-sm">Loading salesmen...</div>
+        <div className="p-8 text-center text-slate-500 font-semibold bg-white border border-slate-200 rounded-2xl shadow-xs">
+          Loading salesmen...
+        </div>
       ) : salesmen.length === 0 ? (
-        <div className="p-8 text-center text-slate-500 bg-white rounded-2xl border border-slate-200">
-          No salesman accounts found. Click "New Salesman" to create one.
+        <div className="p-8 text-center text-slate-700 bg-white border border-slate-200 rounded-2xl font-semibold shadow-xs">
+          No salesman accounts found. Click "Add Salesman" to create one.
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {salesmen.map((salesman) => (
             <div
               key={salesman.id}
-              className={`p-4 rounded-2xl border transition-all shadow-xs space-y-3 ${
-                salesman.is_active ? 'bg-white border-slate-200' : 'bg-slate-50/60 border-slate-200 opacity-70'
+              className={`p-5 rounded-2xl border transition-all space-y-3 shadow-xs ${
+                salesman.is_active ? 'bg-white border-slate-200/90 hover:border-slate-300' : 'bg-slate-50 border-slate-200 opacity-70'
               }`}
             >
-              {/* Card Header */}
-              <div className="flex justify-between items-start">
+              <div className="flex justify-between items-start border-b border-slate-100 pb-2.5">
                 <div>
                   <h3 className="font-bold text-slate-900 text-base">{salesman.full_name}</h3>
-                  <span className="text-[11px] text-slate-400 block mt-0.5">
+                  <span className="text-xs font-medium text-slate-500 block mt-0.5">
                     Joined {formatDate(salesman.created_at)}
                   </span>
                 </div>
                 <span
-                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                  className={`text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${
                     salesman.is_active
-                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                      : 'bg-rose-100 text-rose-800 border border-rose-200'
+                      ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                      : 'bg-rose-50 text-rose-800 border-rose-200'
                   }`}
                 >
                   {salesman.is_active ? 'Active' : 'Deactivated'}
@@ -269,39 +270,37 @@ export default function AdminSalesmen() {
               </div>
 
               {/* Contact and Auth Details */}
-              <div className="space-y-1.5 text-xs bg-slate-50 p-3 rounded-xl border border-slate-100">
-                <div className="flex items-center gap-2 text-slate-800 font-medium">
-                  <Mail className="w-3.5 h-3.5 text-brand-600 shrink-0" />
-                  <span className="font-mono text-slate-900 select-all font-semibold">
-                    {salesman.email || <span className="text-slate-400 italic">No email attached</span>}
+              <div className="space-y-1.5 text-xs bg-slate-50/70 p-3 rounded-xl border border-slate-200/70 font-semibold">
+                <div className="flex items-center gap-2 text-slate-900">
+                  <Phone className="w-4 h-4 text-emerald-700 shrink-0" />
+                  <span className="font-mono text-sm font-bold">
+                    Phone: {salesman.phone || <span className="text-slate-400 italic font-normal">No phone</span>}
                   </span>
                 </div>
 
                 <div className="flex items-center gap-2 text-slate-600">
-                  <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                  <span className="font-mono">
-                    {salesman.phone ? salesman.phone : <span className="text-slate-400 italic">No phone added</span>}
+                  <Mail className="w-4 h-4 text-slate-400 shrink-0" />
+                  <span className="font-mono font-medium">
+                    Email: {salesman.email || <span className="text-slate-400 italic">No email</span>}
                   </span>
                 </div>
               </div>
 
               {/* Action Buttons */}
               <div className="pt-1 flex items-center justify-between gap-2 border-t border-slate-100">
-                <div className="flex items-center gap-1.5">
-                  {/* Change Password Button */}
+                <div className="flex items-center gap-2">
                   <button
                     onClick={() => openPasswordModal(salesman)}
-                    className="px-2.5 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200"
+                    className="px-3 py-1.5 text-xs font-bold uppercase transition flex items-center gap-1.5 bg-white text-slate-700 border border-slate-200 rounded-xl hover:bg-slate-50 shadow-xs"
                     title="Change or reset password"
                   >
-                    <KeyRound className="w-3.5 h-3.5 text-amber-600" />
+                    <KeyRound className="w-3.5 h-3.5 text-slate-500" />
                     <span>Password</span>
                   </button>
 
-                  {/* Edit Details Button */}
                   <button
                     onClick={() => openEditModal(salesman)}
-                    className="px-2.5 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200"
+                    className="px-3 py-1.5 text-xs font-bold uppercase transition flex items-center gap-1.5 bg-white text-slate-700 border border-slate-200 rounded-xl hover:bg-slate-50 shadow-xs"
                     title="Edit name, phone, or email"
                   >
                     <Pencil className="w-3.5 h-3.5 text-slate-500" />
@@ -309,10 +308,9 @@ export default function AdminSalesmen() {
                   </button>
                 </div>
 
-                {/* Status Toggle Button */}
                 <button
                   onClick={() => handleToggleStatus(salesman)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 border ${
+                  className={`px-3 py-1.5 text-xs font-bold uppercase transition flex items-center gap-1 rounded-xl border shadow-xs ${
                     salesman.is_active
                       ? 'bg-rose-50 text-rose-700 hover:bg-rose-100 border-rose-200'
                       : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-200'
@@ -346,26 +344,23 @@ export default function AdminSalesmen() {
       >
         {passwordTarget && (
           <form onSubmit={handleChangePassword} className="space-y-4">
-            {/* Account Summary Banner */}
-            <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs space-y-1">
-              <span className="text-slate-500 font-semibold block uppercase tracking-wider text-[10px]">
-                Target Account
+            <div className="bg-slate-100 p-3 border border-slate-300 text-xs space-y-1">
+              <span className="text-slate-600 font-black block uppercase text-[11px]">
+                Target Account:
               </span>
-              <p className="font-bold text-slate-900 text-sm">{passwordTarget.full_name}</p>
-              <p className="text-slate-600 font-mono">{passwordTarget.email}</p>
+              <p className="font-black text-slate-900 text-sm">{passwordTarget.full_name}</p>
+              <p className="text-slate-700 font-mono">Login Phone: {passwordTarget.phone}</p>
             </div>
 
             {passwordError && (
-              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>{passwordError}</span>
+              <div className="p-3 bg-rose-100 border border-rose-600 text-rose-950 text-xs font-bold">
+                {passwordError}
               </div>
             )}
 
             {passwordSuccess && (
-              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs flex items-center gap-2 font-bold">
-                <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
-                <span>{passwordSuccess}</span>
+              <div className="p-3 bg-emerald-100 border border-emerald-600 text-emerald-950 text-xs font-black">
+                {passwordSuccess}
               </div>
             )}
 
@@ -380,19 +375,16 @@ export default function AdminSalesmen() {
                   placeholder="Min 6 characters"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full px-3 py-2 pr-10 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-brand-600 focus:outline-none"
+                  className="w-full px-3.5 py-2.5 pr-10 border border-slate-300 rounded-xl text-sm font-semibold focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
                 />
                 <button
                   type="button"
                   onClick={() => setShowNewPassword(!showNewPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 p-1"
                 >
                   {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
-              <span className="text-[11px] text-slate-400 mt-1 block">
-                Must be at least 6 characters.
-              </span>
             </div>
 
             <div>
@@ -405,25 +397,25 @@ export default function AdminSalesmen() {
                 placeholder="Re-enter new password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-brand-600 focus:outline-none"
+                className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-semibold focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
               />
             </div>
 
-            <div className="flex gap-2 pt-2">
+            <div className="grid grid-cols-2 gap-2 pt-2">
               <button
                 type="button"
                 onClick={() => setPasswordTarget(null)}
                 disabled={passwordSaving}
-                className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-semibold text-xs hover:bg-slate-50"
+                className="py-3 bg-white border border-slate-200 text-slate-700 font-bold text-xs uppercase rounded-xl hover:bg-slate-50 transition shadow-xs"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={passwordSaving}
-                className="flex-1 py-2.5 rounded-xl bg-brand-700 hover:bg-brand-800 text-white font-bold text-xs transition disabled:opacity-50"
+                className="py-3 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs uppercase rounded-xl transition shadow-xs disabled:opacity-50"
               >
-                {passwordSaving ? 'Updating Password...' : 'Save New Password'}
+                {passwordSaving ? 'Saving...' : 'Save Password'}
               </button>
             </div>
           </form>
@@ -441,7 +433,7 @@ export default function AdminSalesmen() {
         {editTarget && (
           <form onSubmit={handleUpdateSalesman} className="space-y-4">
             {editError && (
-              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs">
+              <div className="p-3 bg-rose-50 border border-rose-200 text-rose-950 text-xs font-semibold rounded-xl">
                 {editError}
               </div>
             )}
@@ -456,32 +448,18 @@ export default function AdminSalesmen() {
                 placeholder="e.g. Ramesh Kumar"
                 value={editFormData.fullName}
                 onChange={(e) => setEditFormData({ ...editFormData, fullName: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-brand-600 focus:outline-none"
+                className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-semibold focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
               />
             </div>
 
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-                Login Email
-              </label>
-              <input
-                type="email"
-                required
-                placeholder="e.g. ramesh@makhanabiz.com"
-                value={editFormData.email}
-                onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-brand-600 focus:outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-                Mobile Phone * (Login ID)
+                Login Phone * (10 Digits)
               </label>
               <input
                 type="tel"
                 required
-                maxLength={14}
+                maxLength={10}
                 placeholder="10-digit mobile number"
                 value={editFormData.phone}
                 onChange={(e) => {
@@ -489,26 +467,36 @@ export default function AdminSalesmen() {
                   const trimmed = digits.length > 10 ? digits.slice(-10) : digits;
                   setEditFormData({ ...editFormData, phone: trimmed });
                 }}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm font-mono focus:ring-2 focus:ring-brand-600 focus:outline-none"
+                className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-mono font-bold focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
               />
-              <span className="text-[11px] text-slate-400 mt-1 block">
-                Salesman will use this 10-digit number to log in.
-              </span>
             </div>
 
-            <div className="flex gap-2 pt-2">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                Login Email (Optional)
+              </label>
+              <input
+                type="email"
+                placeholder="e.g. ramesh@makhanabiz.com"
+                value={editFormData.email}
+                onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-semibold focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 pt-2">
               <button
                 type="button"
                 onClick={() => setEditTarget(null)}
                 disabled={editSaving}
-                className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-semibold text-xs hover:bg-slate-50"
+                className="py-3 bg-white border border-slate-200 text-slate-700 font-bold text-xs uppercase rounded-xl hover:bg-slate-50 transition shadow-xs"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={editSaving}
-                className="flex-1 py-2.5 rounded-xl bg-brand-700 hover:bg-brand-800 text-white font-bold text-xs transition"
+                className="py-3 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs uppercase rounded-xl transition shadow-xs"
               >
                 {editSaving ? 'Saving...' : 'Save Changes'}
               </button>
@@ -527,7 +515,7 @@ export default function AdminSalesmen() {
       >
         <form onSubmit={handleCreateSalesman} className="space-y-4">
           {errorMsg && (
-            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs">
+            <div className="p-3 bg-rose-50 border border-rose-200 text-rose-950 text-xs font-semibold rounded-xl">
               {errorMsg}
             </div>
           )}
@@ -542,7 +530,7 @@ export default function AdminSalesmen() {
               placeholder="e.g. Ramesh Kumar"
               value={formData.fullName}
               onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-              className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-brand-600 focus:outline-none"
+              className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-semibold focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
             />
           </div>
 
@@ -554,7 +542,7 @@ export default function AdminSalesmen() {
               type="tel"
               required
               inputMode="numeric"
-              maxLength={14}
+              maxLength={10}
               placeholder="e.g. 9876543210 (10 digits)"
               value={formData.phone}
               onChange={(e) => {
@@ -562,16 +550,13 @@ export default function AdminSalesmen() {
                 const trimmed = digits.length > 10 ? digits.slice(-10) : digits;
                 setFormData({ ...formData, phone: trimmed });
               }}
-              className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm font-mono focus:ring-2 focus:ring-brand-600 focus:outline-none"
+              className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-mono font-bold focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
             />
-            <span className="text-[11px] text-slate-400 mt-1 block">
-              Salesman will use this 10-digit number to log in to their account.
-            </span>
           </div>
 
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-              Temporary / Initial Password *
+              Initial Password *
             </label>
             <div className="relative">
               <input
@@ -580,19 +565,16 @@ export default function AdminSalesmen() {
                 placeholder="Min 6 characters"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="w-full px-3 py-2 pr-10 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-brand-600 focus:outline-none"
+                className="w-full px-3.5 py-2.5 pr-10 border border-slate-300 rounded-xl text-sm font-semibold focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
               />
               <button
                 type="button"
                 onClick={() => setShowAddPassword(!showAddPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 p-1"
               >
                 {showAddPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
-            <span className="text-[11px] text-slate-400 mt-1 block">
-              At least 6 characters. Can be changed anytime.
-            </span>
           </div>
 
           <div>
@@ -604,28 +586,25 @@ export default function AdminSalesmen() {
               placeholder="Auto-generated if left blank"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-brand-600 focus:outline-none"
+              className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-semibold focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
             />
-            <span className="text-[11px] text-slate-400 mt-1 block">
-              Optional backup email. Salesman logs in with phone number.
-            </span>
           </div>
 
-          <div className="flex gap-2 pt-2">
+          <div className="grid grid-cols-2 gap-2 pt-2">
             <button
               type="button"
               onClick={() => setShowAddModal(false)}
               disabled={saving}
-              className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-semibold text-xs hover:bg-slate-50"
+              className="py-3 bg-white border border-slate-200 text-slate-700 font-bold text-xs uppercase rounded-xl hover:bg-slate-50 transition shadow-xs"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 py-2.5 rounded-xl bg-brand-700 hover:bg-brand-800 text-white font-bold text-xs transition"
+              className="py-3 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs uppercase rounded-xl transition shadow-xs"
             >
-              {saving ? 'Creating Account...' : 'Create Salesman'}
+              {saving ? 'Creating...' : 'Create Salesman'}
             </button>
           </div>
         </form>

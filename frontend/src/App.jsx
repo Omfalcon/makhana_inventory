@@ -6,7 +6,6 @@ import Login from './pages/Login';
 import Unauthorized from './pages/Unauthorized';
 import ErrorBoundary from './components/ErrorBoundary';
 
-// Direct imports: eliminates lazy-chunk network roundtrips & white-screen lag
 import SalesmanHome from './pages/salesman/SalesmanHome';
 import SalesmanCatalogue from './pages/salesman/SalesmanCatalogue';
 import SalesmanCart from './pages/salesman/SalesmanCart';
@@ -30,10 +29,10 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-4 border-brand-200 border-t-brand-700 rounded-full animate-spin" />
-          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center space-y-3 shadow-lg max-w-xs w-full">
+          <div className="w-10 h-10 border-4 border-emerald-100 border-t-emerald-600 rounded-full animate-spin mx-auto" />
+          <span className="text-xs font-bold text-slate-800 uppercase tracking-wider block">
             Loading Makhana Hub...
           </span>
         </div>
@@ -83,9 +82,9 @@ export default function App() {
           )}
 
           {!isAdmin && !isSalesman && (
-            <div className="p-8 text-center text-slate-500 bg-white rounded-2xl border border-slate-200">
-              <p className="font-bold text-sm text-slate-800">Initializing your account workspace...</p>
-              <p className="text-xs text-slate-400 mt-1">Please wait a moment while permissions are loaded.</p>
+            <div className="p-8 text-center text-slate-700 bg-white border border-slate-200 rounded-2xl shadow-xs">
+              <p className="font-bold text-sm text-slate-900">Initializing your account workspace...</p>
+              <p className="text-xs text-slate-500 mt-1">Please wait a moment while permissions are loaded.</p>
             </div>
           )}
         </main>

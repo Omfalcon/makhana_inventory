@@ -60,37 +60,42 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-center px-4 sm:px-6 lg:px-8 py-10">
+    <div className="min-h-screen bg-slate-50 flex flex-col justify-center px-4 py-8 sm:px-6 lg:px-8 font-sans">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
         {/* Brand Icon */}
-        <div className="w-16 h-16 rounded-2xl bg-brand-700 text-white flex items-center justify-center mx-auto shadow-md">
-          <Package className="w-9 h-9" />
+        <div className="w-16 h-16 bg-emerald-700 text-white flex items-center justify-center mx-auto rounded-2xl shadow-md border border-emerald-600">
+          <Package className="w-9 h-9 text-amber-300" />
         </div>
-        <h2 className="mt-4 text-2xl font-black text-slate-900 tracking-tight">
-          Makhana Hub
+        <div className="mt-3 flex items-center justify-center gap-2">
+          <span className="text-[10px] font-mono font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded-full uppercase">
+            Petpooja Retail Engine
+          </span>
+        </div>
+        <h2 className="mt-2 text-2xl font-black text-slate-900 tracking-tight">
+          Makhana Billing Station
         </h2>
-        <p className="mt-1 text-xs text-slate-500 font-medium">
-          Inventory, Sales & Delivery Management
+        <p className="text-xs font-semibold text-slate-500 mt-1">
+          Fast POS Billing, Counter Register &amp; Inventory ERP
         </p>
       </div>
 
       <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-7 px-6 sm:px-8 rounded-3xl border border-slate-200/80 shadow-xl space-y-5">
+        <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200 shadow-xl space-y-5">
           {/* Role Switcher Tabs */}
-          <div className="grid grid-cols-2 gap-1 bg-slate-100 p-1 rounded-2xl">
+          <div className="grid grid-cols-2 p-1 rounded-xl bg-slate-100 border border-slate-200 gap-1">
             <button
               type="button"
               onClick={() => {
                 setRole('SALESMAN');
                 setErrorMessage('');
               }}
-              className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition ${
+              className={`flex items-center justify-center gap-2 py-2.5 text-xs sm:text-sm font-bold rounded-lg transition ${
                 role === 'SALESMAN'
-                  ? 'bg-white text-brand-900 shadow-xs'
-                  : 'text-slate-500 hover:text-slate-900'
+                  ? 'bg-white text-emerald-800 shadow-xs border border-slate-200/60'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <Truck className="w-4 h-4 text-brand-600" />
+              <Truck className="w-4 h-4 text-emerald-600" />
               <span>Salesman</span>
             </button>
 
@@ -100,109 +105,107 @@ export default function Login() {
                 setRole('ADMIN');
                 setErrorMessage('');
               }}
-              className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition ${
+              className={`flex items-center justify-center gap-2 py-2.5 text-xs sm:text-sm font-bold rounded-lg transition ${
                 role === 'ADMIN'
-                  ? 'bg-white text-brand-900 shadow-xs'
-                  : 'text-slate-500 hover:text-slate-900'
+                  ? 'bg-white text-emerald-800 shadow-xs border border-slate-200/60'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <ShieldCheck className="w-4 h-4 text-brand-600" />
-              <span>Administrator</span>
+              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              <span>Admin</span>
             </button>
           </div>
 
-          <div className="border-b border-slate-100 pb-2">
-            <h3 className="text-base font-bold text-slate-800">
-              {role === 'SALESMAN' ? 'Salesman Sign In' : 'Administrator Sign In'}
+          <div className="border-b border-slate-200/80 pb-2">
+            <h3 className="text-base font-bold text-slate-900">
+              {role === 'SALESMAN' ? 'Salesman Login' : 'Admin Login'}
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
               {role === 'SALESMAN'
-                ? 'Sign in using your 10-digit mobile number'
-                : 'Sign in using your admin email address'}
+                ? 'Enter your registered 10-digit mobile number'
+                : 'Enter your admin email address'}
             </p>
           </div>
 
           {(errorMessage || authError) && (
-            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <span>{errorMessage || authError}</span>
-              </div>
+            <div className="p-3 bg-rose-50 border border-rose-200 text-rose-900 rounded-xl text-xs sm:text-sm font-semibold flex items-start gap-2.5">
+              <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+              <span>{errorMessage || authError}</span>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {role === 'SALESMAN' ? (
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-                  Mobile Phone Number
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Mobile Number *
                 </label>
                 <div className="relative">
-                  <Phone className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <Phone className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
                   <input
                     type="tel"
                     required
                     inputMode="numeric"
                     pattern="[0-9]{10}"
                     maxLength={10}
-                    placeholder="e.g. 8849699787"
+                    placeholder="10-digit number"
                     value={phone}
                     onChange={(e) => {
                       const digits = e.target.value.replace(/\D/g, '').slice(0, 10);
                       setPhone(digits);
                     }}
-                    className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-mono tracking-wide focus:ring-2 focus:ring-brand-600 focus:outline-none"
+                    className="w-full pl-10 pr-3.5 py-3 rounded-xl border border-slate-300 text-base font-mono font-bold text-slate-900 focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
                   />
                 </div>
-                <div className="flex items-center justify-between text-[11px] text-slate-400 mt-1">
-                  <span>Enter registered 10-digit mobile number</span>
-                  <span className={`font-mono font-medium ${phone.length === 10 ? 'text-emerald-600 font-bold' : ''}`}>
+                <div className="flex items-center justify-between text-xs font-medium text-slate-500 mt-1.5">
+                  <span>Enter 10-digit phone number</span>
+                  <span className={`font-mono ${phone.length === 10 ? 'text-emerald-700 font-bold' : ''}`}>
                     {phone.length}/10
                   </span>
                 </div>
               </div>
             ) : (
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-                  Admin Email Address
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Admin Email *
                 </label>
                 <div className="relative">
-                  <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
                   <input
-                    type="text"
+                    type="email"
                     required
                     autoComplete="email"
                     placeholder="admin@makhanabiz.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-brand-600 focus:outline-none"
+                    className="w-full pl-10 pr-3.5 py-3 rounded-xl border border-slate-300 text-sm font-semibold text-slate-900 focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
                   />
                 </div>
               </div>
             )}
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-                Password
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                Password *
               </label>
 
               <div className="relative">
-                <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   required
                   autoComplete="current-password"
-                  placeholder="••••••••"
+                  placeholder="Enter password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-9 pr-10 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-brand-600 focus:outline-none"
+                  className="w-full pl-10 pr-12 py-3 rounded-xl border border-slate-300 text-sm font-semibold text-slate-900 focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-800 p-1 font-bold text-xs"
                 >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
             </div>
@@ -210,15 +213,15 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full mt-2 py-3 bg-brand-700 hover:bg-brand-800 active:scale-98 text-white font-extrabold text-sm rounded-xl transition shadow-md flex items-center justify-center gap-2 disabled:opacity-50"
+              className="w-full mt-3 py-3.5 bg-emerald-700 hover:bg-emerald-800 active:bg-emerald-900 text-white font-extrabold text-sm uppercase tracking-wider rounded-xl transition shadow-md active:scale-98 flex items-center justify-center gap-2 disabled:opacity-50"
             >
-              <span>{loading ? 'Authenticating...' : `Sign In as ${role === 'SALESMAN' ? 'Salesman' : 'Admin'}`}</span>
-              <ArrowRight className="w-4 h-4" />
+              <span>{loading ? 'Authenticating...' : `ENTER POS TERMINAL`}</span>
+              <ArrowRight className="w-4 h-4 text-amber-300" />
             </button>
           </form>
 
-          <p className="text-center text-[11px] text-slate-400 font-medium pt-1">
-            Forgot your password? Please contact your system administrator.
+          <p className="text-center text-[11px] text-slate-400 font-semibold pt-1">
+            Makhana Retail ERP • Powered by Petpooja Design Standard
           </p>
         </div>
       </div>

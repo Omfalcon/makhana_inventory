@@ -17,7 +17,7 @@ dist-ssr
 .env
 .env.production
 .env.development
-api/.env
+.env
 frontend/.env
 
 # Editor directories and files

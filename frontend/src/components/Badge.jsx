@@ -5,26 +5,29 @@ export function OrderStatusBadge({ status }) {
   switch (status) {
     case 'PLACED':
       return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">
-          Placed
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider bg-amber-50 text-amber-900 border border-amber-200 rounded-full shadow-xs">
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+          Pending
         </span>
       );
     case 'DELIVERED':
       return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
-          ✓ Delivered
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider bg-emerald-50 text-emerald-900 border border-emerald-200 rounded-full shadow-xs">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+          Delivered
         </span>
       );
     case 'CANCELLED':
       return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-300">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider bg-rose-50 text-rose-900 border border-rose-200 rounded-full shadow-xs">
+          <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
           Cancelled
         </span>
       );
     default:
       return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">
-          Placed
+        <span className="inline-flex items-center px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider bg-slate-100 text-slate-800 border border-slate-200 rounded-full shadow-xs">
+          {status}
         </span>
       );
   }
@@ -33,20 +36,23 @@ export function OrderStatusBadge({ status }) {
 export function StockStatusBadge({ stock, threshold }) {
   if (stock <= 0) {
     return (
-      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider bg-rose-50 text-rose-800 border border-rose-200 rounded-full shadow-xs">
+        <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
         Out of Stock
       </span>
     );
   }
   if (stock <= threshold) {
     return (
-      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">
-        Low Stock ({stock})
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider bg-amber-50 text-amber-900 border border-amber-200 rounded-full shadow-xs">
+        <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+        Low ({stock})
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800">
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider bg-emerald-50 text-emerald-900 border border-emerald-200 rounded-full shadow-xs">
+      <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
       {stock} in stock
     </span>
   );
@@ -55,14 +61,15 @@ export function StockStatusBadge({ stock, threshold }) {
 export function RoleBadge({ role }) {
   if (role === 'ADMIN') {
     return (
-      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider bg-purple-100 text-purple-900 border border-purple-200">
+      <span className="inline-flex items-center px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider bg-emerald-100/80 text-emerald-900 border border-emerald-200 rounded-full shadow-xs">
         Admin
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider bg-emerald-100 text-emerald-900 border border-emerald-200">
+    <span className="inline-flex items-center px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider bg-amber-50 text-amber-900 border border-amber-200 rounded-full shadow-xs">
       Salesman
     </span>
   );
 }
+
