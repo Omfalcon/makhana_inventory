@@ -201,14 +201,14 @@ export default function SalesmanCart({ onNavigate }) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [placedOrder, handlePlaceOrder]);
 
-  // Petpooja Tax Calculations (12% GST inclusive for Makhana)
+  // Tax Calculations (12% GST inclusive for Makhana)
   // Taxable = Subtotal / 1.12
   const taxablePaise = Math.round(subtotalPaise / 1.12);
   const totalGstPaise = subtotalPaise - taxablePaise;
   const cgstPaise = Math.round(totalGstPaise / 2);
   const sgstPaise = totalGstPaise - cgstPaise;
 
-  // Order Confirmation View (Petpooja Receipt Card)
+  // Order Confirmation View (Receipt Card)
   if (placedOrder) {
     return (
       <div className="max-w-xl mx-auto my-6 bg-white border border-slate-200/90 rounded-2xl shadow-xl overflow-hidden animate-fade-in">
@@ -218,7 +218,7 @@ export default function SalesmanCart({ onNavigate }) {
             <CheckCircle2 className="w-7 h-7 text-amber-300" />
           </div>
           <span className="text-xs font-mono uppercase tracking-widest text-emerald-200 block mb-1">
-            PETPOOJA BILLING SYSTEM • INVOICE GENERATED
+            BILLING SYSTEM • INVOICE GENERATED
           </span>
           <h2 className="text-2xl font-black tracking-tight">Order #{placedOrder.order_number}</h2>
           <p className="text-xs text-emerald-200 mt-1">Inventory deducted automatically. Ready for dispatch.</p>
@@ -294,7 +294,7 @@ export default function SalesmanCart({ onNavigate }) {
 
   return (
     <div className="space-y-4 pb-16">
-      {/* Petpooja POS Subheader Bar */}
+      {/* POS Subheader Bar */}
       <div className="bg-white border border-slate-200/90 rounded-2xl p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
         <div className="flex items-center gap-3">
           <button
@@ -337,7 +337,7 @@ export default function SalesmanCart({ onNavigate }) {
 
       {/* Main 2-Column POS Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-        {/* Left Column (Items Ledger + Petpooja Tax Breakdown) */}
+        {/* Left Column (Items Ledger + Tax Breakdown) */}
         <div className="lg:col-span-7 space-y-4">
           {/* Running Items Ledger */}
           <div className="bg-white border border-slate-200/90 rounded-2xl shadow-xs overflow-hidden">
@@ -417,7 +417,7 @@ export default function SalesmanCart({ onNavigate }) {
             </div>
           </div>
 
-          {/* Petpooja GST Tax Breakdown Card */}
+          {/* GST Tax Breakdown Card */}
           <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-xs space-y-2.5">
             <div className="flex items-center justify-between pb-2 border-b border-slate-200">
               <span className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
@@ -566,68 +566,68 @@ export default function SalesmanCart({ onNavigate }) {
             />
           </div>
 
-          {/* Petpooja Fast Payment Mode Pills */}
+          {/* Fast Payment Mode Pills */}
           <div>
             <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
               Settlement Tender
             </label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-1.5 xs:gap-2">
               <button
                 type="button"
                 onClick={() => setPaymentMode('cash')}
-                className={`py-2 px-2 rounded-xl border text-xs font-bold flex flex-col items-center gap-1 transition ${
+                className={`py-2 px-1 xs:px-2 rounded-xl border text-[10.5px] xs:text-xs font-bold flex flex-col items-center gap-1 transition ${
                   paymentMode === 'cash'
                     ? 'bg-emerald-50 border-emerald-600 text-emerald-800 shadow-2xs ring-1 ring-emerald-600'
                     : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
                 }`}
               >
-                <Banknote className="w-4 h-4 text-emerald-700" />
-                <span>Cash [F6]</span>
+                <Banknote className="w-3.5 h-3.5 xs:w-4 xs:h-4 text-emerald-700" />
+                <span className="truncate">Cash [F6]</span>
               </button>
               <button
                 type="button"
                 onClick={() => setPaymentMode('upi')}
-                className={`py-2 px-2 rounded-xl border text-xs font-bold flex flex-col items-center gap-1 transition ${
+                className={`py-2 px-1 xs:px-2 rounded-xl border text-[10.5px] xs:text-xs font-bold flex flex-col items-center gap-1 transition ${
                   paymentMode === 'upi'
                     ? 'bg-emerald-50 border-emerald-600 text-emerald-800 shadow-2xs ring-1 ring-emerald-600'
                     : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
                 }`}
               >
-                <QrCode className="w-4 h-4 text-emerald-700" />
-                <span>UPI [F7]</span>
+                <QrCode className="w-3.5 h-3.5 xs:w-4 xs:h-4 text-emerald-700" />
+                <span className="truncate">UPI [F7]</span>
               </button>
               <button
                 type="button"
                 onClick={() => setPaymentMode('credit')}
-                className={`py-2 px-2 rounded-xl border text-xs font-bold flex flex-col items-center gap-1 transition ${
+                className={`py-2 px-1 xs:px-2 rounded-xl border text-[10.5px] xs:text-xs font-bold flex flex-col items-center gap-1 transition ${
                   paymentMode === 'credit'
                     ? 'bg-emerald-50 border-emerald-600 text-emerald-800 shadow-2xs ring-1 ring-emerald-600'
                     : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
                 }`}
               >
-                <CreditCard className="w-4 h-4 text-emerald-700" />
-                <span>Khata [F8]</span>
+                <CreditCard className="w-3.5 h-3.5 xs:w-4 xs:h-4 text-emerald-700" />
+                <span className="truncate">Khata [F8]</span>
               </button>
             </div>
           </div>
 
-          {/* Master Submit Button (Petpooja style) */}
+          {/* Master Submit Button */}
           <div className="pt-2">
             <button
               type="submit"
               disabled={submitting}
-              className="w-full py-3.5 bg-emerald-700 hover:bg-emerald-800 active:bg-emerald-900 text-white font-extrabold text-sm uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 transition shadow-md active:scale-98 disabled:opacity-50"
+              className="w-full py-3 xs:py-3.5 px-2 xs:px-4 bg-emerald-700 hover:bg-emerald-800 active:bg-emerald-900 text-white font-extrabold text-xs xs:text-sm uppercase tracking-wider rounded-xl flex items-center justify-center gap-1.5 xs:gap-2 transition shadow-md active:scale-98 disabled:opacity-50"
             >
               {submitting ? (
                 <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <Loader2 className="w-4.5 h-4.5 xs:w-5 xs:h-5 animate-spin" />
                   <span>Generating Bill...</span>
                 </>
               ) : (
                 <>
-                  <Printer className="w-5 h-5 text-amber-300" />
-                  <span>CONFIRM &amp; PRINT BILL</span>
-                  <span className="bg-emerald-800 px-2 py-0.5 rounded text-xs font-mono text-emerald-100">[F9]</span>
+                  <Printer className="w-4.5 h-4.5 xs:w-5 xs:h-5 text-amber-300 shrink-0" />
+                  <span className="truncate">CONFIRM &amp; PRINT BILL</span>
+                  <span className="hidden sm:inline bg-emerald-800 px-2 py-0.5 rounded text-xs font-mono text-emerald-100">[F9]</span>
                 </>
               )}
             </button>

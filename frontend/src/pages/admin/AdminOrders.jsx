@@ -134,7 +134,7 @@ export default function AdminOrders() {
 
   return (
     <div className="space-y-4 pb-12">
-      {/* Petpooja Dispatch Terminal Header */}
+      {/* Dispatch Terminal Header */}
       <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
         <div>
           <div className="flex items-center gap-2">
@@ -146,7 +146,7 @@ export default function AdminOrders() {
             </span>
           </div>
           <p className="text-xs font-semibold text-slate-500 mt-0.5">
-            Petpooja Counter Billing Ledger • Track field deliveries, collections &amp; GST tax invoices
+            Counter Billing Ledger • Track field deliveries, collections &amp; GST tax invoices
           </p>
         </div>
         <button
@@ -159,7 +159,7 @@ export default function AdminOrders() {
         </button>
       </div>
 
-      {/* Petpooja Filter & Search Toolbar */}
+      {/* Filter & Search Toolbar */}
       <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/90 shadow-xs space-y-3">
         <div className="relative">
           <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -236,7 +236,7 @@ export default function AdminOrders() {
         </div>
       </div>
 
-      {/* Orders Grid (Petpooja Card Style) */}
+      {/* Orders Grid (Card Style) */}
       {loading && orders.length === 0 ? (
         <div className="p-12 text-center text-slate-500 font-semibold bg-white border border-slate-200 rounded-2xl shadow-xs">
           <RefreshCw className="w-6 h-6 animate-spin text-emerald-700 mx-auto mb-2" />
@@ -263,7 +263,7 @@ export default function AdminOrders() {
                 key={order.id}
                 className="bg-white border border-slate-200/90 hover:border-slate-300 rounded-2xl shadow-xs overflow-hidden transition relative flex flex-col justify-between"
               >
-                {/* Petpooja Top Status Stripe */}
+                {/* Top Status Stripe */}
                 <div
                   className={`h-1.5 w-full ${
                     isPending
@@ -315,7 +315,7 @@ export default function AdminOrders() {
                   </div>
                 </div>
 
-                {/* Petpooja Bottom Action & Total Cluster */}
+                {/* Bottom Action & Total Cluster */}
                 <div className="px-4 py-3 sm:px-5 bg-slate-50/70 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <span className="text-[10px] text-slate-500 uppercase font-black tracking-wider block">
@@ -388,7 +388,7 @@ export default function AdminOrders() {
       <Modal
         isOpen={Boolean(selectedOrder)}
         onClose={() => setSelectedOrder(null)}
-        title={selectedOrder ? `Petpooja Order Ledger #${selectedOrder.order_number}` : ''}
+        title={selectedOrder ? `Order Ledger #${selectedOrder.order_number}` : ''}
       >
         {selectedOrder && (
           <div className="space-y-4 text-xs sm:text-sm font-semibold">

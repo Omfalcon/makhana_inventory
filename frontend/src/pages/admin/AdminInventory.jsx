@@ -217,7 +217,7 @@ export default function AdminInventory() {
 
   return (
     <div className="space-y-4 pb-12">
-      {/* Petpooja Inventory Terminal Header */}
+      {/* Inventory Terminal Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs">
         <div>
           <div className="flex items-center gap-2">
@@ -230,7 +230,7 @@ export default function AdminInventory() {
             </span>
           </div>
           <p className="text-xs font-semibold text-slate-500 mt-0.5">
-            Petpooja Retail ERP • Central warehouse stock ledger, batch reorders &amp; GST rates
+            Central warehouse stock ledger, batch reorders &amp; GST rates
           </p>
         </div>
 
@@ -250,12 +250,12 @@ export default function AdminInventory() {
             className="flex items-center gap-1.5 px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold uppercase transition shadow-xs active:scale-98"
           >
             <Plus className="w-4 h-4 text-amber-300" />
-            <span>+ Add SKU</span>
+            <span>Add SKU</span>
           </button>
         </div>
       </div>
 
-      {/* Petpooja 4-Metric Tiles Bar */}
+      {/* 4-Metric Tiles Bar */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-xs">
           <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">Total Active SKUs</span>
@@ -350,7 +350,7 @@ export default function AdminInventory() {
         </div>
       </div>
 
-      {/* Products Grid (Petpooja SKU Card Design) */}
+      {/* Products Grid (SKU Card Design) */}
       {loading && products.length === 0 ? (
         <div className="p-12 text-center text-slate-500 font-semibold bg-white border border-slate-200 rounded-2xl shadow-xs">
           <RefreshCw className="w-6 h-6 animate-spin text-emerald-700 mx-auto mb-2" />
@@ -379,7 +379,7 @@ export default function AdminInventory() {
                     : 'border-slate-200/90 hover:border-slate-300'
                 }`}
               >
-                {/* Petpooja Top Indicator Stripe */}
+                {/* Top Indicator Stripe */}
                 <div
                   className={`h-1.5 w-full ${
                     !p.is_active
@@ -442,7 +442,7 @@ export default function AdminInventory() {
                   </div>
                 </div>
 
-                {/* Petpooja Bottom Action Bar */}
+                {/* Bottom Action Bar */}
                 <div className="px-4 py-3 bg-slate-50/70 border-t border-slate-100 flex items-center justify-between gap-2">
                   <button
                     onClick={() => openMovements(p.id)}
@@ -497,7 +497,7 @@ export default function AdminInventory() {
         onClose={() => {
           if (!saving) setAdjustingProduct(null);
         }}
-        title={`Petpooja Stock Adjustment: ${adjustingProduct?.name || ''}`}
+        title={`Stock Adjustment: ${adjustingProduct?.name || ''}`}
       >
         {adjustingProduct && (
           <form onSubmit={handleAdjustStock} className="space-y-4">

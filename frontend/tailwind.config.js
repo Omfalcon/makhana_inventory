@@ -6,6 +6,9 @@ export default {
   ],
   theme: {
     extend: {
+      screens: {
+        'xs': '375px',
+      },
       colors: {
         // Core deep forest pine green from reference photo ("Try TextBack" button & brand accent)
         emerald: {

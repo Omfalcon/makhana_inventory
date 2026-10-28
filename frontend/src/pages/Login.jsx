@@ -60,18 +60,18 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-center px-4 py-8 sm:px-6 lg:px-8 font-sans">
+    <div className="min-h-screen bg-slate-50 flex flex-col justify-center px-2.5 xs:px-4 py-6 xs:py-8 sm:px-6 lg:px-8 font-sans">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
         {/* Brand Icon */}
-        <div className="w-16 h-16 bg-emerald-700 text-white flex items-center justify-center mx-auto rounded-2xl shadow-md border border-emerald-600">
-          <Package className="w-9 h-9 text-amber-300" />
+        <div className="w-14 h-14 xs:w-16 xs:h-16 bg-emerald-700 text-white flex items-center justify-center mx-auto rounded-2xl shadow-md border border-emerald-600">
+          <Package className="w-8 h-8 xs:w-9 xs:h-9 text-amber-300" />
         </div>
-        <div className="mt-3 flex items-center justify-center gap-2">
+        <div className="mt-2.5 xs:mt-3 flex items-center justify-center gap-2">
           <span className="text-[10px] font-mono font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded-full uppercase">
-            Petpooja Retail Engine
+            Retail POS Engine
           </span>
         </div>
-        <h2 className="mt-2 text-2xl font-black text-slate-900 tracking-tight">
+        <h2 className="mt-2 text-xl xs:text-2xl font-black text-slate-900 tracking-tight">
           Makhana Billing Station
         </h2>
         <p className="text-xs font-semibold text-slate-500 mt-1">
@@ -79,8 +79,8 @@ export default function Login() {
         </p>
       </div>
 
-      <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200 shadow-xl space-y-5">
+      <div className="mt-5 xs:mt-6 sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="bg-white p-4 xs:p-6 sm:p-8 rounded-2xl border border-slate-200 shadow-xl space-y-4 xs:space-y-5">
           {/* Role Switcher Tabs */}
           <div className="grid grid-cols-2 p-1 rounded-xl bg-slate-100 border border-slate-200 gap-1">
             <button
@@ -221,7 +221,7 @@ export default function Login() {
           </form>
 
           <p className="text-center text-[11px] text-slate-400 font-semibold pt-1">
-            Makhana Retail ERP • Powered by Petpooja Design Standard
+            Makhana Retail ERP • Enterprise Point of Sale
           </p>
         </div>
       </div>

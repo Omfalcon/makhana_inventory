@@ -98,11 +98,11 @@ export default function AdminDashboard({ onNavigate }) {
       {realtimeNotice && (
         <div className="p-3 bg-emerald-800 text-white rounded-xl shadow-xs text-xs font-bold text-center flex items-center justify-center gap-2 animate-fade-in">
           <RefreshCw className="w-4 h-4 animate-spin text-amber-300" />
-          <span>Petpooja Live Sync: New order booking or stock adjustment recorded!</span>
+          <span>Live Sync: New order booking or stock adjustment recorded!</span>
         </div>
       )}
 
-      {/* Petpooja Register Header & Preset Selector */}
+      {/* Register Header & Preset Selector */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs">
         <div>
           <div className="flex items-center gap-2">
@@ -116,7 +116,7 @@ export default function AdminDashboard({ onNavigate }) {
             </span>
           </div>
           <p className="text-xs font-semibold text-slate-500 mt-0.5">
-            Petpooja Retail Analytics • Day register totals, cash tenders &amp; dispatch metrics
+            Retail Analytics • Day register totals, cash tenders &amp; dispatch metrics
           </p>
         </div>
 
@@ -163,7 +163,7 @@ export default function AdminDashboard({ onNavigate }) {
         </div>
       )}
 
-      {/* Petpooja 4-Metric Register Tiles */}
+      {/* 4-Metric Register Tiles */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {/* Invoices Count */}
         <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/90 shadow-xs">

@@ -221,7 +221,7 @@ export default function AdminSalesmen() {
           className="flex items-center gap-1.5 px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold uppercase transition shadow-xs"
         >
           <UserPlus className="w-4 h-4 text-amber-300" />
-          <span>+ Add Salesman</span>
+          <span>Add Salesman</span>
         </button>
       </div>
 

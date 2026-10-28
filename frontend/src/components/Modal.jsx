@@ -21,23 +21,23 @@ export default function Modal({ isOpen, onClose, title, children, maxWidth = 'ma
       {/* Soft translucent backdrop */}
       <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity" onClick={onClose} />
       
-      <div className="min-h-full flex items-center justify-center p-3 text-left sm:p-4">
+      <div className="min-h-full flex items-center justify-center p-2 xs:p-3 text-left sm:p-4">
         <div className={`relative bg-white text-left transition-all sm:my-8 w-full ${maxWidth} rounded-2xl border border-slate-200/90 shadow-2xl overflow-hidden`}>
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-slate-200 px-5 py-3.5 bg-slate-50/80">
-            <h3 className="text-base font-bold text-slate-900 tracking-tight">{title}</h3>
+          <div className="flex items-center justify-between border-b border-slate-200 px-3.5 xs:px-5 py-3 xs:py-3.5 bg-slate-50/80">
+            <h3 className="text-sm xs:text-base font-bold text-slate-900 tracking-tight truncate pr-2">{title}</h3>
             <button
               onClick={onClose}
               aria-label="Close modal"
-              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900 rounded-lg font-bold text-xs uppercase transition shadow-xs"
+              className="flex items-center gap-1.5 px-2 xs:px-2.5 py-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900 rounded-lg font-bold text-xs uppercase transition shadow-xs shrink-0"
             >
               <X className="w-4 h-4" />
-              <span>Close</span>
+              <span className="hidden xs:inline">Close</span>
             </button>
           </div>
 
           {/* Body */}
-          <div className="p-4 sm:p-6 max-h-[80vh] overflow-y-auto bg-white">
+          <div className="p-3 xs:p-4 sm:p-6 max-h-[85vh] overflow-y-auto bg-white">
             {children}
           </div>
         </div>

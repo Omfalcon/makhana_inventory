@@ -34,22 +34,98 @@
   }
 }
 
+/* Mobile Safe Area Inset */
+.safe-bottom {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
+}
+
+/* Touch utilities & horizontal strip scrollbars */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* Print styling for GST Invoices */
 @media print {
-  body {
-    background: white !important;
-    color: black !important;
-    font-size: 12pt;
+  @page {
+    size: A4 portrait;
+    margin: 8mm 10mm;
   }
+
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Isolate invoice portal: hide application root when invoice modal is mounted */
+  body.has-invoice-print > *:not(#invoice-print-portal),
+  body:has(#invoice-print-portal) > *:not(#invoice-print-portal) {
+    display: none !important;
+  }
+
+  #invoice-print-portal {
+    display: block !important;
+    position: static !important;
+    inset: auto !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
   .no-print {
     display: none !important;
   }
+
   .print-only {
     display: block !important;
   }
-  @page {
-    margin: 10mm;
-    size: A4 portrait;
+
+  /* Force single A4 page containment */
+  #printable-tax-invoice {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    page-break-before: avoid !important;
+    break-before: avoid !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+
+  #printable-tax-invoice table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  #printable-tax-invoice tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 }
 

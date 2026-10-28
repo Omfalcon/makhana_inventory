@@ -64,7 +64,7 @@ export default function SalesmanDeliveries() {
 
   return (
     <div className="space-y-4 pb-12">
-      {/* Petpooja Delivery Terminal Header */}
+      {/* Delivery Terminal Header */}
       <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
         <div>
           <div className="flex items-center gap-2">
@@ -77,7 +77,7 @@ export default function SalesmanDeliveries() {
             </span>
           </div>
           <p className="text-xs font-semibold text-slate-500 mt-0.5">
-            Petpooja Handover Terminal • Confirm delivery &amp; record cash collection at counter
+            Handover Terminal • Confirm delivery &amp; record cash collection at counter
           </p>
         </div>
         <button
@@ -146,7 +146,7 @@ export default function SalesmanDeliveries() {
                 key={order.id}
                 className="bg-white border border-slate-200/90 hover:border-slate-300 rounded-2xl shadow-xs overflow-hidden transition relative flex flex-col justify-between"
               >
-                {/* Petpooja Top Status Stripe */}
+                {/* Top Status Stripe */}
                 <div
                   className={`h-1.5 w-full ${
                     isPending ? 'bg-amber-500' : 'bg-emerald-600'
@@ -208,7 +208,7 @@ export default function SalesmanDeliveries() {
                   </div>
                 </div>
 
-                {/* Bottom Bar: Amount & Petpooja Action */}
+                {/* Bottom Bar: Amount & Action */}
                 <div className="px-4 py-3 sm:px-5 bg-slate-50/70 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider block">

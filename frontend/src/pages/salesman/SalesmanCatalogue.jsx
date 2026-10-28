@@ -33,7 +33,7 @@ export default function SalesmanCatalogue({ onNavigate }) {
     loadCatalogue();
   }, []);
 
-  // Petpooja Keyboard Accelerators: F2 focuses search, F4 navigates to Cart
+  // Keyboard Accelerators: F2 focuses search, F4 navigates to Cart
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'F2') {
@@ -81,8 +81,8 @@ export default function SalesmanCatalogue({ onNavigate }) {
   const inStockCount = products.filter(p => p.stock_quantity > 0).length;
 
   return (
-    <div className="space-y-3.5 pb-28">
-      {/* Petpooja POS Status Sub-bar / Key Shortcuts */}
+    <div className={`space-y-3.5 ${totalUnits > 0 ? 'pb-44 lg:pb-28' : 'pb-28'}`}>
+      {/* POS Status Sub-bar / Key Shortcuts */}
       <div className="w-full bg-slate-100/80 px-3.5 py-2 rounded-xl flex flex-wrap items-center justify-between gap-2 border border-slate-200/80 shadow-xs">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-lg border border-slate-200/90 shadow-xs">
@@ -117,28 +117,28 @@ export default function SalesmanCatalogue({ onNavigate }) {
       </div>
 
       {/* Barcode / Fast Search & Category Filter Strip */}
-      <div className="bg-white p-3.5 border border-slate-200/90 rounded-2xl shadow-xs space-y-3">
+      <div className="bg-white p-2.5 xs:p-3.5 border border-slate-200/90 rounded-2xl shadow-xs space-y-2.5 xs:space-y-3">
         <div className="relative flex items-center">
-          <div className="absolute left-3.5 flex items-center pointer-events-none text-emerald-700">
-            <ScanBarcode className="w-5 h-5" />
+          <div className="absolute left-3 xs:left-3.5 flex items-center pointer-events-none text-emerald-700">
+            <ScanBarcode className="w-4.5 h-4.5 xs:w-5 xs:h-5" />
           </div>
           <input
             ref={searchInputRef}
             type="text"
-            placeholder="Scan barcode [Auto-detect] or search Makhana SKU, Flavour... (Press F2)"
+            placeholder="Search Makhana SKU, Flavour... [F2]"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-11 pr-20 py-2.5 bg-slate-50/70 border border-slate-300 rounded-xl text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 shadow-inner transition"
+            className="w-full pl-9 xs:pl-11 pr-12 xs:pr-20 py-2 xs:py-2.5 bg-slate-50/70 border border-slate-300 rounded-xl text-xs xs:text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 shadow-inner transition"
           />
-          <div className="absolute right-3 flex items-center gap-1.5 pointer-events-none">
-            <span className="px-1.5 py-0.5 rounded bg-slate-200 text-slate-600 font-mono text-[10px] font-bold uppercase">
+          <div className="absolute right-2.5 xs:right-3 flex items-center gap-1.5 pointer-events-none">
+            <span className="px-1.5 py-0.5 rounded bg-slate-200 text-slate-600 font-mono text-[9px] xs:text-[10px] font-bold uppercase">
               F2
             </span>
           </div>
         </div>
 
-        {/* Petpooja Category Scroll Strip */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+        {/* Category Scroll Strip */}
+        <div className="flex items-center gap-1.5 xs:gap-2 overflow-x-auto pb-1 no-scrollbar">
           <button
             onClick={() => setSelectedCategory('ALL')}
             className={`px-3 py-1.5 rounded-xl font-bold text-xs whitespace-nowrap transition flex items-center gap-1.5 shadow-xs ${
@@ -263,7 +263,7 @@ export default function SalesmanCatalogue({ onNavigate }) {
                   </span>
                 </div>
 
-                {/* Petpooja Price & Fast Add Row */}
+                {/* Price & Fast Add Row */}
                 <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
                   <div>
                     <span className="text-[10px] text-slate-500 block font-bold uppercase">Rate</span>
@@ -287,7 +287,7 @@ export default function SalesmanCatalogue({ onNavigate }) {
                       title="Quick Add"
                     >
                       <Plus className="w-4 h-4 text-amber-300" />
-                      <span>+ Add</span>
+                      <span>Add</span>
                     </button>
                   ) : (
                     <div className="flex items-center bg-white border border-emerald-300 rounded-xl overflow-hidden shadow-xs ring-1 ring-emerald-400/30">
@@ -322,19 +322,19 @@ export default function SalesmanCatalogue({ onNavigate }) {
         </div>
       )}
 
-      {/* Petpooja Sticky Bottom Billing & Settlement Trigger Bar */}
+      {/* Sticky Bottom Billing & Settlement Trigger Bar */}
       {totalUnits > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200/90 p-3 sm:p-4 shadow-2xl no-print">
-          <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center font-bold text-sm shadow-xs">
+        <div className="fixed bottom-15 xs:bottom-16 lg:bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200/90 p-2 xs:p-2.5 sm:p-4 shadow-2xl no-print">
+          <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 xs:gap-3">
+            <div className="flex items-center gap-2 xs:gap-3 min-w-0">
+              <div className="w-8 h-8 xs:w-10 xs:h-10 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center font-bold text-xs xs:text-sm shadow-xs shrink-0">
                 {totalUnits}
               </div>
-              <div>
-                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block">
-                  Grand Total (Incl. GST)
+              <div className="min-w-0">
+                <span className="text-[9.5px] xs:text-[11px] font-bold uppercase tracking-wider text-slate-500 block truncate">
+                  Total (Incl. GST)
                 </span>
-                <span className="text-xl sm:text-2xl font-black font-mono text-slate-900">
+                <span className="text-base xs:text-xl sm:text-2xl font-black font-mono text-slate-900 truncate block">
                   {formatPaise(subtotalPaise)}
                 </span>
               </div>
@@ -342,11 +342,12 @@ export default function SalesmanCatalogue({ onNavigate }) {
 
             <button
               onClick={() => onNavigate('cart')}
-              className="flex items-center gap-2 py-3 px-5 sm:px-7 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-sm sm:text-base rounded-xl transition uppercase shadow-md active:scale-98"
+              className="flex items-center gap-1.5 xs:gap-2 py-2 xs:py-3 px-2.5 xs:px-5 sm:px-7 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs xs:text-sm sm:text-base rounded-xl transition uppercase shadow-md active:scale-98 shrink-0"
             >
-              <span>REVIEW BILL &amp; PAY</span>
-              <span className="bg-emerald-800/80 px-2 py-0.5 rounded text-xs font-mono text-emerald-100">[F9]</span>
-              <ArrowRight className="w-5 h-5 text-amber-300" />
+              <span className="hidden xs:inline">REVIEW BILL &amp; PAY</span>
+              <span className="xs:hidden">PAY NOW</span>
+              <span className="hidden sm:inline bg-emerald-800/80 px-2 py-0.5 rounded text-xs font-mono text-emerald-100">[F9]</span>
+              <ArrowRight className="w-4 h-4 xs:w-5 xs:h-5 text-amber-300" />
             </button>
           </div>
         </div>
