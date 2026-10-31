@@ -21,7 +21,9 @@ import {
   TrendingUp,
   FileText,
   ChevronRight,
-  Plus
+  Plus,
+  Sparkles,
+  User
 } from 'lucide-react';
 
 export default function Navbar({ activeTab, onSelectTab }) {
@@ -79,7 +81,7 @@ export default function Navbar({ activeTab, onSelectTab }) {
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'orders', label: 'All Orders', icon: ShoppingCart },
     { id: 'inventory', label: 'Inventory', icon: Boxes },
-    { id: 'salesmen', label: 'Salesmen Staff', icon: Users },
+    { id: 'salesmen', label: 'Staff', icon: Users },
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
@@ -114,143 +116,146 @@ export default function Navbar({ activeTab, onSelectTab }) {
 
   return (
     <>
-      {/* Top Navbar */}
+      {/* Top Navbar Header */}
       <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs no-print select-none">
-        <div className="max-w-7xl mx-auto px-3 xs:px-4 sm:px-6 lg:px-8 h-20 xs:h-[84px] lg:h-16 flex items-center justify-between gap-2">
-          {/* Left: Menu Button & App Title */}
-          <div className="flex items-center gap-2 xs:gap-3 min-w-0">
-            {/* Desktop-only Hamburger Menu Button (Removed from mobile view) */}
+        <div className="max-w-7xl mx-auto px-3 xs:px-4 sm:px-6 lg:px-8 h-16 xs:h-[70px] lg:h-16 flex items-center justify-between gap-4">
+          
+          {/* Left: Brand / Logo Section */}
+          <div className="flex items-center gap-3 shrink-0">
+            {/* Mobile-only menu button */}
             <button
               type="button"
               onClick={() => setDrawerOpen(true)}
               aria-label="Open menu"
-              className="hidden lg:flex p-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-800 hover:bg-slate-100 hover:text-emerald-800 active:scale-95 transition shrink-0 items-center justify-center"
+              className="lg:hidden p-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 hover:bg-slate-100 hover:text-emerald-800 active:scale-95 transition shrink-0 flex items-center justify-center"
             >
               <Menu className="w-5 h-5" />
             </button>
 
-            <div className="flex items-center gap-2.5 xs:gap-3 min-w-0">
-              <div className="w-10 h-10 xs:w-11 xs:h-11 lg:w-9 lg:h-9 bg-amber-300 text-emerald-950 rounded-xl lg:rounded-lg flex items-center justify-center shadow-xs shrink-0">
-                <Package className="w-5.5 h-5.5 xs:w-6 xs:h-6 lg:w-5 lg:h-5 text-emerald-950" />
+            {/* Brand Logo & Name */}
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-emerald-800 text-amber-300 flex items-center justify-center shadow-xs shrink-0">
+                <Sparkles className="w-4.5 h-4.5 fill-amber-300 text-amber-300" />
               </div>
-              <div className="leading-tight min-w-0">
-                <h1 className="text-base xs:text-lg lg:text-lg font-black text-slate-900 tracking-tight flex items-center gap-1.5 xs:gap-2 truncate">
-                  <span>Makhana Hub</span>
-                  <span className="text-[10px] xs:text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-full shrink-0">
-                    {isAdmin ? 'Admin' : 'Sales'}
-                  </span>
-                </h1>
-                <p className="text-[11px] text-slate-500 font-semibold block leading-tight mt-0.5 truncate">
-                  {isAdmin ? 'Enterprise Distribution ERP' : 'Retail POS & Billing Terminal'}
-                </p>
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-base sm:text-lg font-black tracking-tight text-slate-900 uppercase">
+                  Makhana<span className="text-emerald-700 font-extrabold ml-1">Hub</span>
+                </span>
+                <span className="text-[10px] font-extrabold uppercase tracking-widest px-2 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200/80 rounded-full shrink-0">
+                  {isAdmin ? 'Admin' : 'Sales'}
+                </span>
               </div>
             </div>
           </div>
 
-          {/* Center (Desktop): Soft Nav Tabs */}
-          <nav className="hidden lg:flex items-center gap-1">
+          {/* Center (Desktop): Sleek Centered Navigation Links (Reference Layout) */}
+          <nav className="hidden lg:flex items-center justify-center gap-6 xl:gap-8 flex-1 max-w-2xl mx-auto">
             {navItems.map((item) => {
-              const Icon = item.icon;
               const isActive = activeTab === item.id;
               return (
                 <button
                   key={item.id}
+                  type="button"
                   onClick={() => handleTabClick(item.id)}
-                  className={`px-3 py-2 text-xs font-bold transition rounded-lg flex items-center gap-1.5 ${
+                  className={`relative py-1 text-sm font-bold transition-colors duration-150 flex items-center gap-1.5 group ${
                     isActive
-                      ? 'bg-emerald-700 text-white shadow-xs'
-                      : 'text-slate-700 hover:text-emerald-800 hover:bg-emerald-50/70'
+                      ? 'text-emerald-800 font-extrabold'
+                      : 'text-slate-600 hover:text-emerald-700'
                   }`}
                 >
-                  <Icon className="w-4 h-4" />
-                  <span>{item.label}</span>
+                  <span className="tracking-tight">{item.label}</span>
                   {item.badge && (
-                    <span className="ml-1 px-1.5 py-0.2 text-[11px] font-black bg-amber-400 text-slate-950 rounded-full">
+                    <span className="px-1.5 py-0.2 text-[10px] font-black bg-amber-400 text-slate-950 rounded-full shadow-2xs">
                       {item.badge}
                     </span>
+                  )}
+                  {/* Subtle active indicator bar */}
+                  {isActive && (
+                    <span className="absolute -bottom-2 left-0 right-0 h-0.5 bg-emerald-700 rounded-full" />
                   )}
                 </button>
               );
             })}
           </nav>
 
-          {/* Right: Cart Button + Live Status + Profile */}
-          <div className="flex items-center gap-1.5 xs:gap-2 shrink-0">
+          {/* Right: User Profile & Actions (Echoing 👤 Sign In & Register) */}
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {/* Salesman Quick Cart Button */}
             {isSalesman && (
               <button
                 type="button"
                 onClick={() => handleTabClick('cart')}
-                className={`relative px-3 py-2 rounded-lg border transition hidden sm:flex items-center gap-1.5 font-bold text-xs shadow-xs ${
+                className={`relative px-3 py-1.5 rounded-xl border text-xs font-bold transition hidden sm:flex items-center gap-1.5 shadow-2xs ${
                   activeTab === 'cart'
                     ? 'bg-emerald-700 text-white border-emerald-700'
                     : 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100'
                 }`}
                 aria-label="View Cart"
               >
-                <ShoppingCart className="w-4 h-4 text-amber-600" />
-                <span className="hidden sm:inline font-bold">Cart</span>
+                <ShoppingCart className="w-3.5 h-3.5 text-amber-700" />
+                <span className="hidden md:inline">Cart</span>
                 {totalUnits > 0 && (
-                  <span className="px-1.5 py-0.2 bg-emerald-700 text-white text-[11px] font-black rounded-full">
+                  <span className="px-1.5 py-0.2 bg-emerald-700 text-white text-[10px] font-black rounded-full">
                     {totalUnits}
                   </span>
                 )}
               </button>
             )}
 
-            {/* POS Counter & Connection Status */}
-            <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold bg-emerald-50/70 border border-emerald-200/80 rounded-lg text-emerald-900 shadow-xs">
+            {/* Live POS Status Indicator */}
+            <div
+              className="hidden md:flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold bg-emerald-50/70 border border-emerald-200/80 rounded-xl text-emerald-900 shadow-2xs"
+              title={connected ? "Realtime sync online" : "Syncing..."}
+            >
               <span className={`w-2 h-2 rounded-full ${connected ? 'bg-emerald-600 animate-pulse' : 'bg-amber-500'}`} />
-              <span className="font-bold text-[11px] uppercase tracking-wider">{connected ? 'POS-01 LIVE' : 'SYNCING'}</span>
-              <span className="text-slate-400">•</span>
-              <span className="text-[11px] text-slate-600 font-medium truncate max-w-[110px]">{profile?.full_name?.split(' ')[0] || 'Cashier'}</span>
+              <span className="text-[10px] uppercase tracking-wider">{connected ? 'POS LIVE' : 'SYNC'}</span>
             </div>
 
-            {/* User Profile & Direct Sign Out */}
+            {/* User Profile (With Accent User Icon) */}
             {profile && (
-              <div className="relative flex items-center gap-1.5 xs:gap-2">
-                <div className="hidden xl:flex flex-col text-right leading-tight">
-                  <span className="text-xs font-bold text-slate-900 truncate max-w-[140px]">{profile.full_name}</span>
-                  <span className="text-[10px] text-slate-500 font-semibold uppercase">{profile.role}</span>
+              <div className="flex items-center gap-2">
+                {/* Desktop User Section */}
+                <div className="hidden sm:flex items-center gap-2 px-2.5 py-1 rounded-xl bg-slate-50 border border-slate-200/80 text-slate-800">
+                  <div className="w-6 h-6 rounded-full bg-emerald-100/90 text-emerald-700 flex items-center justify-center shrink-0">
+                    <User className="w-3.5 h-3.5 stroke-[2.4]" />
+                  </div>
+                  <div className="flex flex-col text-left leading-tight">
+                    <span className="text-xs font-bold text-slate-900 truncate max-w-[110px]">
+                      {profile?.full_name?.split(' ')[0] || 'User'}
+                    </span>
+                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">
+                      {profile?.role}
+                    </span>
+                  </div>
                 </div>
 
-                {/* Desktop Profile Button: opens drawer exactly as before */}
-                <button
-                  type="button"
-                  onClick={() => setDrawerOpen(true)}
-                  className="hidden lg:flex w-9 h-9 rounded-lg bg-slate-800 text-white font-bold text-sm items-center justify-center hover:bg-emerald-700 transition shadow-xs"
-                  title={`${profile.full_name} (${profile.role}) - Open Menu`}
-                >
-                  {profile.full_name ? profile.full_name.charAt(0).toUpperCase() : 'U'}
-                </button>
-
-                {/* Mobile Profile Button: opens mobile profile & settings menu */}
+                {/* Mobile Profile Avatar Button */}
                 <button
                   type="button"
                   onClick={() => setMobileProfileOpen(prev => !prev)}
-                  className={`lg:hidden w-10 h-10 xs:w-11 xs:h-11 rounded-xl font-black text-sm xs:text-base flex items-center justify-center transition shadow-xs ${
+                  className={`lg:hidden w-10 h-10 rounded-xl font-black text-sm flex items-center justify-center transition shadow-2xs ${
                     mobileProfileOpen
                       ? 'bg-emerald-800 text-amber-300 ring-2 ring-emerald-500/50'
                       : 'bg-slate-800 text-white hover:bg-emerald-700'
                   }`}
                   aria-label="User Profile & Settings"
-                  title="Profile & Settings"
                 >
                   {profile.full_name ? profile.full_name.charAt(0).toUpperCase() : 'U'}
                 </button>
 
-                {/* Desktop Sign Out */}
+                {/* Desktop Sign Out Action Button */}
                 <button
                   type="button"
                   onClick={handleLogout}
                   disabled={loggingOut}
-                  className="hidden md:flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 font-bold text-xs uppercase transition shadow-xs"
+                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-rose-50 hover:border-rose-200 text-slate-700 hover:text-rose-700 font-bold text-xs uppercase transition shadow-2xs"
                   title="Sign Out"
                 >
-                  <LogOut className="w-3.5 h-3.5 text-slate-600" />
-                  <span>Sign Out</span>
+                  <LogOut className="w-3.5 h-3.5 text-slate-500" />
+                  <span>{loggingOut ? 'Leaving...' : 'Sign Out'}</span>
                 </button>
 
-                {/* Mobile Profile & Settings Dropdown Menu */}
+                {/* Mobile Profile & Settings Dropdown */}
                 {mobileProfileOpen && (
                   <>
                     <div
@@ -258,8 +263,7 @@ export default function Navbar({ activeTab, onSelectTab }) {
                       onClick={() => setMobileProfileOpen(false)}
                     />
 
-                    <div className="absolute right-0 top-full mt-2 w-72 xs:w-80 bg-white rounded-2xl border border-slate-200/90 shadow-2xl p-3 z-50 lg:hidden animate-fade-in text-slate-900">
-                      {/* User Header */}
+                    <div className="absolute right-3 top-16 w-72 xs:w-80 bg-white rounded-2xl border border-slate-200/90 shadow-2xl p-3 z-50 lg:hidden animate-fade-in text-slate-900">
                       <div className="p-3 bg-emerald-50/70 border border-emerald-200/60 rounded-xl flex items-center justify-between mb-2">
                         <div className="min-w-0 flex-1">
                           <span className="font-bold text-sm text-slate-900 block truncate">
@@ -274,7 +278,6 @@ export default function Navbar({ activeTab, onSelectTab }) {
                         </div>
                       </div>
 
-                      {/* Primary Settings Option */}
                       <div className="space-y-1">
                         <button
                           type="button"
@@ -302,7 +305,7 @@ export default function Navbar({ activeTab, onSelectTab }) {
                             </div>
                             <div className="min-w-0">
                               <span className="block leading-tight font-extrabold truncate">Settings</span>
-                              <span className={`text-[10.5px] xs:text-[11px] font-medium block truncate ${
+                              <span className={`text-[10.5px] font-medium block truncate ${
                                 activeTab === 'settings' ? 'text-emerald-100' : 'text-slate-500'
                               }`}>
                                 {isAdmin ? 'Business GSTIN, Prefix & Details' : 'Account & Performance'}
@@ -312,7 +315,6 @@ export default function Navbar({ activeTab, onSelectTab }) {
                           <ChevronRight className="w-4 h-4 opacity-70 shrink-0 ml-1" />
                         </button>
 
-                        {/* For Admin: also quick access to Staff and Analytics if needed */}
                         {isAdmin && (
                           <button
                             type="button"
@@ -336,7 +338,7 @@ export default function Navbar({ activeTab, onSelectTab }) {
                               </div>
                               <div className="min-w-0">
                                 <span className="block leading-tight font-bold truncate">Staff &amp; Accounts</span>
-                                <span className={`text-[10.5px] xs:text-[11px] font-medium block truncate ${
+                                <span className={`text-[10.5px] font-medium block truncate ${
                                   activeTab === 'salesmen' ? 'text-emerald-100' : 'text-slate-500'
                                 }`}>
                                   Manage salesman logins
@@ -348,7 +350,6 @@ export default function Navbar({ activeTab, onSelectTab }) {
                         )}
                       </div>
 
-                      {/* Sign Out on Mobile */}
                       <div className="pt-2 mt-2 border-t border-slate-100">
                         <button
                           type="button"
@@ -370,10 +371,9 @@ export default function Navbar({ activeTab, onSelectTab }) {
             )}
           </div>
         </div>
-
       </header>
 
-      {/* Mobile Fixed Bottom Navigation with Reference Sculpted Center Notch */}
+      {/* Mobile Fixed Bottom Navigation with Sculpted Center Notch */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-slate-200/90 shadow-[0_-4px_24px_rgba(23,56,43,0.06)] no-print safe-bottom">
         {/* Sculpted Curved Notch for Center Button */}
         <div className="absolute -top-[27px] left-1/2 -translate-x-1/2 w-32 xs:w-36 h-7 pointer-events-none overflow-hidden">
@@ -491,12 +491,12 @@ export default function Navbar({ activeTab, onSelectTab }) {
             {/* Drawer Header */}
             <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/70">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 bg-amber-300 text-emerald-950 rounded-lg flex items-center justify-center shadow-xs">
-                  <Package className="w-5 h-5 text-emerald-950" />
+                <div className="w-9 h-9 bg-emerald-800 text-amber-300 rounded-xl flex items-center justify-center shadow-xs">
+                  <Sparkles className="w-4.5 h-4.5 fill-amber-300 text-amber-300" />
                 </div>
                 <div>
                   <h2 className="text-base font-bold text-slate-900 leading-tight">Makhana Hub</h2>
-                  <p className="text-xs text-slate-500 font-medium">Enterprise ERP</p>
+                  <p className="text-xs text-slate-500 font-medium">Enterprise Management</p>
                 </div>
               </div>
 
