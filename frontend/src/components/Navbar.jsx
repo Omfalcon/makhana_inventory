@@ -118,7 +118,7 @@ export default function Navbar({ activeTab, onSelectTab }) {
     <>
       {/* Top Navbar Header */}
       <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs no-print select-none">
-        <div className="max-w-7xl mx-auto px-3 xs:px-4 sm:px-6 lg:px-8 h-16 xs:h-[70px] lg:h-16 flex items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto px-3 xs:px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
           
           {/* Left: Brand / Logo Section */}
           <div className="flex items-center gap-3 shrink-0">
@@ -132,14 +132,14 @@ export default function Navbar({ activeTab, onSelectTab }) {
               <Menu className="w-5 h-5" />
             </button>
 
-            {/* Brand Logo & Name */}
-            <div className="flex items-center gap-2.5">
+            {/* Brand Logo & Name (hidden on mobile, visible on desktop) */}
+            <div className="hidden lg:flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-xl bg-emerald-800 text-amber-300 flex items-center justify-center shadow-xs shrink-0">
                 <Sparkles className="w-4.5 h-4.5 fill-amber-300 text-amber-300" />
               </div>
               <div className="flex items-center gap-2 min-w-0">
                 <span className="text-base sm:text-lg font-black tracking-tight text-slate-900 uppercase">
-                  Makhana<span className="text-emerald-700 font-extrabold ml-1">Hub</span>
+                  Mithila Mantra<span className="text-emerald-700 font-extrabold ml-1">Makhana</span>
                 </span>
                 <span className="text-[10px] font-extrabold uppercase tracking-widest px-2 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200/80 rounded-full shrink-0">
                   {isAdmin ? 'Admin' : 'Sales'}
@@ -495,7 +495,7 @@ export default function Navbar({ activeTab, onSelectTab }) {
                   <Sparkles className="w-4.5 h-4.5 fill-amber-300 text-amber-300" />
                 </div>
                 <div>
-                  <h2 className="text-base font-bold text-slate-900 leading-tight">Makhana Hub</h2>
+                  <h2 className="text-base font-bold text-slate-900 leading-tight">Mithila Mantra Makhana</h2>
                   <p className="text-xs text-slate-500 font-medium">Enterprise Management</p>
                 </div>
               </div>

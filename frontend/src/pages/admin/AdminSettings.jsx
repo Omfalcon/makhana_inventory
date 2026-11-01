@@ -20,8 +20,8 @@ export default function AdminSettings() {
     email: '',
     invoice_prefix: 'MKH',
     next_invoice_number: 1001,
-    default_gst_rate: 12.00,
-    prices_are_gst_inclusive: true,
+    default_gst_rate: 18.00,
+    prices_are_gst_inclusive: false,
     bank_name: '',
     bank_account_no: '',
     bank_ifsc: '',
@@ -244,6 +244,35 @@ export default function AdminSettings() {
                   onChange={(e) => setFormData({ ...formData, next_invoice_number: parseInt(e.target.value, 10) })}
                   className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs font-mono font-bold focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
                 />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                  Standard GST Rate (%)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  required
+                  value={formData.default_gst_rate}
+                  onChange={(e) => setFormData({ ...formData, default_gst_rate: parseFloat(e.target.value) })}
+                  className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs font-mono font-bold focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
+                />
+              </div>
+
+              <div className="flex flex-col justify-end">
+                <label className="flex items-center gap-2 p-2.5 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-100 transition">
+                  <input
+                    type="checkbox"
+                    checked={formData.prices_are_gst_inclusive}
+                    onChange={(e) => setFormData({ ...formData, prices_are_gst_inclusive: e.target.checked })}
+                    className="w-4 h-4 text-emerald-700 rounded focus:ring-emerald-600"
+                  />
+                  <div className="text-xs">
+                    <span className="font-bold text-slate-800 block">Prices are GST-Inclusive</span>
+                    <span className="text-[10px] text-slate-500 font-medium">Unchecked = GST applied over base price</span>
+                  </div>
+                </label>
               </div>
             </div>
           </div>

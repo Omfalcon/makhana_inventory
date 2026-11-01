@@ -430,8 +430,16 @@ export default function AdminOrders() {
                     </span>
                   </div>
                 ))}
+                <div className="p-2.5 bg-slate-50 flex justify-between text-xs text-slate-600 border-t border-slate-200">
+                  <span>Items Base Price (Taxable):</span>
+                  <span className="font-mono font-bold text-slate-800">{formatPaise(selectedOrder.taxable_value_paise || selectedOrder.subtotal_paise)}</span>
+                </div>
+                <div className="p-2.5 bg-slate-50 flex justify-between text-xs text-slate-600 border-t border-slate-100">
+                  <span>Total GST (18%):</span>
+                  <span className="font-mono font-bold text-emerald-800">+{formatPaise(selectedOrder.total_tax_paise || 0)}</span>
+                </div>
                 <div className="p-3 bg-amber-50/80 flex justify-between font-bold text-sm text-amber-950 border-t border-amber-200">
-                  <span>Grand Total:</span>
+                  <span>Grand Total (Payable):</span>
                   <span className="font-mono text-base font-extrabold">{formatPaise(selectedOrder.total_amount_paise)}</span>
                 </div>
               </div>

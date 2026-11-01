@@ -201,12 +201,12 @@ export default function SalesmanCart({ onNavigate }) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [placedOrder, handlePlaceOrder]);
 
-  // Tax Calculations (12% GST inclusive for Makhana)
-  // Taxable = Subtotal / 1.12
-  const taxablePaise = Math.round(subtotalPaise / 1.12);
-  const totalGstPaise = subtotalPaise - taxablePaise;
-  const cgstPaise = Math.round(totalGstPaise / 2);
-  const sgstPaise = totalGstPaise - cgstPaise;
+  // Tax Calculations: 18% GST applied over base price of items ordered
+  const taxablePaise = subtotalPaise;
+  const cgstPaise = Math.round((taxablePaise * 9) / 100);
+  const sgstPaise = Math.round((taxablePaise * 9) / 100);
+  const totalGstPaise = cgstPaise + sgstPaise;
+  const totalPayablePaise = taxablePaise + totalGstPaise;
 
   // Order Confirmation View (Receipt Card)
   if (placedOrder) {
@@ -362,12 +362,12 @@ export default function SalesmanCart({ onNavigate }) {
                       <h4 className="font-bold text-slate-900 text-sm sm:text-base truncate">
                         {product.name}
                       </h4>
-                      <span className="text-[10px] font-mono bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200 font-semibold">
-                        GST 12%
+                      <span className="text-[10px] font-mono bg-emerald-50 text-emerald-800 px-1.5 py-0.5 rounded border border-emerald-200 font-bold">
+                        GST {product.gst_rate || 18}%
                       </span>
                     </div>
                     <span className="text-xs text-slate-500 font-mono font-medium block mt-0.5">
-                      Rate: {formatPaise(product.selling_price_paise)} / unit • In Stock: {product.stock_quantity}
+                      Base Rate: {formatPaise(product.selling_price_paise)} / unit • In Stock: {product.stock_quantity}
                     </span>
                   </div>
 
@@ -422,43 +422,42 @@ export default function SalesmanCart({ onNavigate }) {
             <div className="flex items-center justify-between pb-2 border-b border-slate-200">
               <span className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
                 <Receipt className="w-4 h-4 text-emerald-700" />
-                <span>GST Tax Computation (12% Included)</span>
+                <span>GST Tax Computation (18% Over Base Price)</span>
               </span>
               <span className="text-[11px] font-mono text-slate-500 font-semibold">
-                HSN 20081940
+                HSN 19041090
               </span>
             </div>
 
             <div className="space-y-1.5 text-xs font-semibold text-slate-600">
               <div className="flex justify-between">
-                <span>Taxable Value (Net):</span>
-                <span className="font-mono tabular-nums text-slate-800">{formatPaise(taxablePaise)}</span>
+                <span>Items Base Price (Taxable):</span>
+                <span className="font-mono tabular-nums text-slate-800 font-bold">{formatPaise(taxablePaise)}</span>
               </div>
               <div className="flex justify-between">
-                <span>CGST @ 6.0%:</span>
+                <span>Central Tax (CGST @ 9.0%):</span>
                 <span className="font-mono tabular-nums text-slate-800">{formatPaise(cgstPaise)}</span>
               </div>
               <div className="flex justify-between">
-                <span>SGST @ 6.0%:</span>
+                <span>State Tax (SGST @ 9.0%):</span>
                 <span className="font-mono tabular-nums text-slate-800">{formatPaise(sgstPaise)}</span>
               </div>
               <div className="flex justify-between border-t border-slate-100 pt-1.5 text-slate-700 font-bold">
-                <span>Total GST Amount (12%):</span>
-                <span className="font-mono tabular-nums text-emerald-800">{formatPaise(totalGstPaise)}</span>
-              </div>
-              <div className="flex justify-between text-slate-500 text-[11px]">
-                <span>Rounding Adjustment:</span>
-                <span className="font-mono tabular-nums">₹ 0.00</span>
+                <span>Total GST Amount (18%):</span>
+                <span className="font-mono tabular-nums text-emerald-800 font-bold">+{formatPaise(totalGstPaise)}</span>
               </div>
             </div>
 
             {/* Total Highlight */}
             <div className="pt-2 border-t border-slate-200 flex justify-between items-center">
-              <span className="text-xs uppercase font-extrabold text-slate-900 tracking-wide">
-                Net Payable Amount:
-              </span>
+              <div>
+                <span className="text-xs uppercase font-extrabold text-slate-900 tracking-wide block">
+                  Total Payable Amount:
+                </span>
+                <span className="text-[10.5px] text-slate-500 font-semibold">Base Price + 18% GST</span>
+              </div>
               <span className="font-mono font-black text-xl text-emerald-800 tabular-nums">
-                {formatPaise(subtotalPaise)}
+                {formatPaise(totalPayablePaise)}
               </span>
             </div>
           </div>

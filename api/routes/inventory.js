@@ -93,7 +93,7 @@ router.post('/product', authenticate, requireRole('ADMIN'), async (req, res) => 
             sku,
             sellingPricePaise,
             lowStockThreshold = 10,
-            gstRate = 12.00,
+            gstRate = 18.00,
             hsnCode = '19041090'
         } = req.body;
 

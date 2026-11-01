@@ -235,7 +235,7 @@ export default function SalesmanCatalogue({ onNavigate }) {
                 {/* Top Badge: Stock status pill */}
                 <div className="flex justify-between items-start gap-2">
                   <span className="font-mono text-[11px] font-bold text-slate-500 uppercase tracking-wide">
-                    {product.sku} • GST {product.gst_rate || 12}%
+                    {product.sku} • Base Rate • GST {product.gst_rate || 18}%
                   </span>
 
                   {isOutOfStock ? (
@@ -332,10 +332,13 @@ export default function SalesmanCatalogue({ onNavigate }) {
               </div>
               <div className="min-w-0">
                 <span className="text-[9.5px] xs:text-[11px] font-bold uppercase tracking-wider text-slate-500 block truncate">
-                  Total (Incl. GST)
+                  Total Payable (+18% GST)
                 </span>
                 <span className="text-base xs:text-xl sm:text-2xl font-black font-mono text-slate-900 truncate block">
-                  {formatPaise(subtotalPaise)}
+                  {formatPaise(Math.round(subtotalPaise * 1.18))}
+                </span>
+                <span className="text-[10px] font-mono text-slate-500 block truncate">
+                  Base: {formatPaise(subtotalPaise)}
                 </span>
               </div>
             </div>

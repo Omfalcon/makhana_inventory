@@ -33,7 +33,7 @@ export default function App() {
         <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center space-y-3 shadow-lg max-w-xs w-full">
           <div className="w-10 h-10 border-4 border-emerald-100 border-t-emerald-600 rounded-full animate-spin mx-auto" />
           <span className="text-xs font-bold text-slate-800 uppercase tracking-wider block">
-            Loading Makhana Hub...
+            Loading Mithila Mantra Makhana...
           </span>
         </div>
       </div>

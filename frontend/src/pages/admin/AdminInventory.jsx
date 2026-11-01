@@ -36,6 +36,7 @@ export default function AdminInventory() {
   const [adjustingProduct, setAdjustingProduct] = useState(null);
   const [adjustQuantity, setAdjustQuantity] = useState('');
   const [adjustType, setAdjustType] = useState('ADDITION');
+  const [adjustMode, setAdjustMode] = useState('ADD'); // 'ADD' | 'REDUCE'
   const [adjustReason, setAdjustReason] = useState('');
 
   const [editingProduct, setEditingProduct] = useState(null);
@@ -45,7 +46,7 @@ export default function AdminInventory() {
     sku: '',
     sellingPriceInr: '',
     lowStockThreshold: 10,
-    gstRate: 12.00,
+    gstRate: 18.00,
     hsnCode: '19041090'
   });
 
@@ -85,8 +86,8 @@ export default function AdminInventory() {
     setErrorMsg('');
 
     const qty = parseInt(adjustQuantity, 10);
-    if (isNaN(qty) || qty === 0) {
-      setErrorMsg('Please enter a valid non-zero quantity.');
+    if (isNaN(qty) || qty <= 0) {
+      setErrorMsg('Please enter a valid positive quantity.');
       return;
     }
 
@@ -95,13 +96,22 @@ export default function AdminInventory() {
       return;
     }
 
+    // adjustMode: 'ADD' sends positive, 'REDUCE' sends negative
+    const finalQty = adjustMode === 'REDUCE' ? -qty : qty;
+
+    // Guard: cannot reduce more than available stock
+    if (adjustMode === 'REDUCE' && qty > adjustingProduct.stock_quantity) {
+      setErrorMsg(`Cannot reduce by ${qty}. Only ${adjustingProduct.stock_quantity} units available.`);
+      return;
+    }
+
     try {
       setSaving(true);
       await api.inventory.adjustStock({
         productId: adjustingProduct.id,
-        quantityChange: qty,
+        quantityChange: finalQty,
         reason: adjustReason.trim(),
-        movementType: adjustType
+        movementType: adjustMode === 'REDUCE' ? 'CORRECTION' : adjustType
       });
 
       setAdjustingProduct(null);
@@ -165,7 +175,7 @@ export default function AdminInventory() {
         sku: '',
         sellingPriceInr: '',
         lowStockThreshold: 10,
-        gstRate: 12.00,
+        gstRate: 18.00,
         hsnCode: '19041090'
       });
       await loadProducts();
@@ -191,11 +201,19 @@ export default function AdminInventory() {
   };
 
   const addedCount = movements.filter((m) => (m.quantity_change || 0) > 0).length;
-  const soldCount = movements.filter((m) => (m.quantity_change || 0) < 0).length;
+  // 'SOLD' = order deductions (ORDER_DEDUCTION movement type)
+  const soldCount = movements.filter(
+    (m) => (m.quantity_change || 0) < 0 && m.movement_type === 'ORDER_DEDUCTION'
+  ).length;
+  // 'REMOVED' = manual reductions / corrections (CORRECTION with negative qty)
+  const removedCount = movements.filter(
+    (m) => (m.quantity_change || 0) < 0 && m.movement_type !== 'ORDER_DEDUCTION'
+  ).length;
 
   const displayedMovements = movements.filter((m) => {
     if (movementTab === 'ADDED') return (m.quantity_change || 0) > 0;
-    if (movementTab === 'SOLD') return (m.quantity_change || 0) < 0;
+    if (movementTab === 'SOLD') return (m.quantity_change || 0) < 0 && m.movement_type === 'ORDER_DEDUCTION';
+    if (movementTab === 'REMOVED') return (m.quantity_change || 0) < 0 && m.movement_type !== 'ORDER_DEDUCTION';
     return true;
   });
 
@@ -286,7 +304,7 @@ export default function AdminInventory() {
         <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-xs">
           <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">Standard Tax Class</span>
           <div className="flex items-baseline justify-between mt-1">
-            <span className="text-2xl font-black font-mono text-slate-900">12%</span>
+            <span className="text-2xl font-black font-mono text-slate-900">18%</span>
             <span className="text-xs font-mono text-slate-500">GST (Makhana)</span>
           </div>
         </div>
@@ -475,6 +493,7 @@ export default function AdminInventory() {
                         setAdjustQuantity('');
                         setAdjustReason('');
                         setAdjustType('ADDITION');
+                        setAdjustMode('ADD');
                         setErrorMsg('');
                       }}
                       className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs uppercase rounded-lg transition shadow-2xs flex items-center gap-1.5 active:scale-98"
@@ -501,6 +520,7 @@ export default function AdminInventory() {
       >
         {adjustingProduct && (
           <form onSubmit={handleAdjustStock} className="space-y-4">
+            {/* Current Stock Info */}
             <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl flex justify-between items-center text-xs font-semibold">
               <span className="text-slate-500">Current Warehouse Stock:</span>
               <span className="font-mono font-bold text-slate-900 text-sm bg-white px-2.5 py-1 rounded border border-slate-200">
@@ -514,42 +534,107 @@ export default function AdminInventory() {
               </div>
             )}
 
-            {/* Quick Adjustment Presets */}
+            {/* ADD / REDUCE Toggle */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">
+                Adjustment Type *
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => { setAdjustMode('ADD'); setAdjustQuantity(''); }}
+                  className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border font-bold text-xs uppercase transition ${
+                    adjustMode === 'ADD'
+                      ? 'bg-emerald-700 text-white border-emerald-700 shadow-xs'
+                      : 'bg-white text-emerald-800 border-emerald-300 hover:bg-emerald-50'
+                  }`}
+                >
+                  <TrendingUp className="w-4 h-4" />
+                  Add Stock
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setAdjustMode('REDUCE'); setAdjustQuantity(''); }}
+                  className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border font-bold text-xs uppercase transition ${
+                    adjustMode === 'REDUCE'
+                      ? 'bg-rose-600 text-white border-rose-600 shadow-xs'
+                      : 'bg-white text-rose-700 border-rose-300 hover:bg-rose-50'
+                  }`}
+                >
+                  <TrendingDown className="w-4 h-4" />
+                  Reduce Stock
+                </button>
+              </div>
+            </div>
+
+            {/* Quantity Input */}
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-                Quantity to Add (Units) *
+                Quantity to {adjustMode === 'ADD' ? 'Add' : 'Reduce'} (Units) *
               </label>
               <input
                 type="number"
                 min="1"
+                max={adjustMode === 'REDUCE' ? adjustingProduct.stock_quantity : undefined}
                 required
                 placeholder="e.g. 50"
                 value={adjustQuantity}
                 onChange={(e) => setAdjustQuantity(e.target.value)}
-                className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-base font-mono font-bold focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 shadow-2xs"
+                className={`w-full px-3.5 py-2.5 border rounded-xl text-base font-mono font-bold focus:outline-none focus:ring-1 shadow-2xs transition ${
+                  adjustMode === 'REDUCE'
+                    ? 'border-rose-300 focus:border-rose-500 focus:ring-rose-500'
+                    : 'border-slate-300 focus:border-emerald-600 focus:ring-emerald-600'
+                }`}
               />
+              {/* Preset Buttons */}
               <div className="flex gap-2 mt-2">
                 {[10, 25, 50, 100].map(amt => (
                   <button
                     key={amt}
                     type="button"
                     onClick={() => setAdjustQuantity(String(amt))}
-                    className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-mono font-bold text-xs rounded-lg border border-slate-300 transition"
+                    disabled={adjustMode === 'REDUCE' && amt > adjustingProduct.stock_quantity}
+                    className={`px-2.5 py-1 font-mono font-bold text-xs rounded-lg border transition disabled:opacity-30 disabled:cursor-not-allowed ${
+                      adjustMode === 'REDUCE'
+                        ? 'bg-rose-50 hover:bg-rose-100 text-rose-800 border-rose-200'
+                        : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300'
+                    }`}
                   >
-                    +{amt}
+                    {adjustMode === 'REDUCE' ? '-' : '+'}{amt}
                   </button>
                 ))}
               </div>
+              {/* Preview of resulting stock */}
+              {adjustQuantity && !isNaN(parseInt(adjustQuantity)) && (
+                <div className={`mt-2 px-3 py-2 rounded-lg text-xs font-bold border ${
+                  adjustMode === 'REDUCE'
+                    ? 'bg-rose-50 border-rose-200 text-rose-800'
+                    : 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                }`}>
+                  {adjustMode === 'REDUCE' ? '↓' : '↑'} New stock will be:{' '}
+                  <span className="font-mono font-black">
+                    {adjustMode === 'REDUCE'
+                      ? adjustingProduct.stock_quantity - parseInt(adjustQuantity)
+                      : adjustingProduct.stock_quantity + parseInt(adjustQuantity)
+                    } units
+                  </span>
+                </div>
+              )}
             </div>
 
+            {/* Reason */}
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-                Reason / Batch Note (Mandatory) *
+                Reason / Note (Mandatory) *
               </label>
               <textarea
                 required
                 rows={2}
-                placeholder="e.g. Supplier Shipment Recd, Godown Audit, Roasting Batch #24"
+                placeholder={
+                  adjustMode === 'REDUCE'
+                    ? 'e.g. Damaged goods write-off, Returned to supplier, Godown audit correction'
+                    : 'e.g. Supplier Shipment Received, Godown Audit, Roasting Batch #24'
+                }
                 value={adjustReason}
                 onChange={(e) => setAdjustReason(e.target.value)}
                 className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs sm:text-sm font-semibold focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 shadow-2xs resize-none"
@@ -568,9 +653,13 @@ export default function AdminInventory() {
               <button
                 type="submit"
                 disabled={saving}
-                className="py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs uppercase rounded-xl transition shadow-xs disabled:opacity-50"
+                className={`py-2.5 text-white font-bold text-xs uppercase rounded-xl transition shadow-xs disabled:opacity-50 ${
+                  adjustMode === 'REDUCE'
+                    ? 'bg-rose-600 hover:bg-rose-700'
+                    : 'bg-emerald-700 hover:bg-emerald-800'
+                }`}
               >
-                {saving ? 'Updating...' : 'Save Stock'}
+                {saving ? 'Updating...' : adjustMode === 'REDUCE' ? 'Reduce Stock' : 'Add Stock'}
               </button>
             </div>
           </form>
@@ -785,12 +874,13 @@ export default function AdminInventory() {
         maxWidth="max-w-2xl"
       >
         <div className="space-y-3">
+          {/* 4 Tabs: All / Added / Removed / Sold */}
           <div className="flex p-1 bg-slate-100 border border-slate-200 rounded-xl gap-1 text-xs font-bold">
             <button
               type="button"
               onClick={() => setMovementTab('ALL')}
               className={`flex-1 py-2 rounded-lg uppercase transition ${
-                movementTab === 'ALL' ? 'bg-white text-emerald-800 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
+                movementTab === 'ALL' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               All ({movements.length})
@@ -802,8 +892,18 @@ export default function AdminInventory() {
                 movementTab === 'ADDED' ? 'bg-emerald-700 text-white shadow-2xs' : 'text-emerald-800 hover:bg-emerald-50'
               }`}
             >
-              <ArrowUpRight className="w-4 h-4" />
+              <ArrowUpRight className="w-3.5 h-3.5" />
               <span>Added ({addedCount})</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setMovementTab('REMOVED')}
+              className={`flex-1 py-2 rounded-lg uppercase flex items-center justify-center gap-1 transition ${
+                movementTab === 'REMOVED' ? 'bg-amber-600 text-white shadow-2xs' : 'text-amber-800 hover:bg-amber-50'
+              }`}
+            >
+              <ArrowDownRight className="w-3.5 h-3.5" />
+              <span>Removed ({removedCount})</span>
             </button>
             <button
               type="button"
@@ -812,7 +912,7 @@ export default function AdminInventory() {
                 movementTab === 'SOLD' ? 'bg-rose-700 text-white shadow-2xs' : 'text-rose-800 hover:bg-rose-50'
               }`}
             >
-              <ArrowDownRight className="w-4 h-4" />
+              <ShoppingBag className="w-3.5 h-3.5" />
               <span>Sold ({soldCount})</span>
             </button>
           </div>
@@ -827,15 +927,18 @@ export default function AdminInventory() {
             <div className="divide-y divide-slate-100 border border-slate-200 rounded-2xl overflow-hidden text-xs max-h-[60vh] overflow-y-auto bg-white shadow-xs">
               {displayedMovements.map((m) => {
                 const isAdded = (m.quantity_change || 0) > 0;
+                const isSold = !isAdded && m.movement_type === 'ORDER_DEDUCTION';
+                // isRemoved = manually reduced (CORRECTION, not an order deduction)
+                const isRemoved = !isAdded && !isSold;
                 return (
                   <div
                     key={m.id}
                     className={`p-3.5 flex justify-between items-start bg-white border-l-4 transition hover:bg-slate-50/50 ${
-                      isAdded ? 'border-l-emerald-600' : 'border-l-rose-500'
+                      isAdded ? 'border-l-emerald-600' : isSold ? 'border-l-rose-500' : 'border-l-amber-500'
                     }`}
                   >
                     <div className="space-y-0.5 flex-1 min-w-0 pr-3">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-bold text-slate-900 text-sm">
                           {m.product?.name || 'Product'}
                         </span>
@@ -844,6 +947,16 @@ export default function AdminInventory() {
                             ({m.product.sku})
                           </span>
                         )}
+                        {/* Movement type badge */}
+                        <span className={`text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded-full tracking-wide ${
+                          isAdded
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : isSold
+                            ? 'bg-rose-100 text-rose-800'
+                            : 'bg-amber-100 text-amber-800'
+                        }`}>
+                          {isAdded ? 'Added' : isSold ? 'Sold' : 'Removed'}
+                        </span>
                       </div>
                       <span className="text-xs text-slate-700 block font-semibold">
                         Reason: {m.reason}
@@ -856,7 +969,7 @@ export default function AdminInventory() {
                     <div className="text-right shrink-0">
                       <span
                         className={`font-mono font-black text-base block ${
-                          isAdded ? 'text-emerald-700' : 'text-rose-600'
+                          isAdded ? 'text-emerald-700' : isSold ? 'text-rose-600' : 'text-amber-600'
                         }`}
                       >
                         {isAdded ? `+${m.quantity_change}` : m.quantity_change} pkts

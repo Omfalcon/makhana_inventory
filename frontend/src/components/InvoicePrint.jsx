@@ -164,9 +164,9 @@ export default function InvoicePrint({ invoice, onClose }) {
                 <th className="p-1.5 border-r border-slate-300 print:border-slate-800">Description of Goods</th>
                 <th className="p-1.5 border-r border-slate-300 print:border-slate-800 text-center">HSN/SAC</th>
                 <th className="p-1.5 border-r border-slate-300 print:border-slate-800 text-center">Qty</th>
-                <th className="p-1.5 border-r border-slate-300 print:border-slate-800 text-right">Unit Rate</th>
-                <th className="p-1.5 border-r border-slate-300 print:border-slate-800 text-right">Taxable (₹)</th>
-                <th className="p-1.5 border-r border-slate-300 print:border-slate-800 text-center">Rate</th>
+                <th className="p-1.5 border-r border-slate-300 print:border-slate-800 text-right">Unit Rate (Base)</th>
+                <th className="p-1.5 border-r border-slate-300 print:border-slate-800 text-right">Taxable Base (₹)</th>
+                <th className="p-1.5 border-r border-slate-300 print:border-slate-800 text-center">GST %</th>
                 {isInterState ? (
                   <th className="p-1.5 border-r border-slate-300 print:border-slate-800 text-right">IGST (₹)</th>
                 ) : (
@@ -280,32 +280,32 @@ export default function InvoicePrint({ invoice, onClose }) {
           {/* Tax Calculation Summary Box */}
           <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1.5 text-xs print:bg-transparent print:border print:border-slate-800 print:rounded-none print:p-2 print:text-[10.5px]">
             <div className="flex justify-between text-slate-600 print:text-black">
-              <span>Taxable Value:</span>
+              <span>Taxable Value (Base Price):</span>
               <span className="font-mono font-semibold">{formatPaise(invoice.taxable_value_paise)}</span>
             </div>
             {isInterState ? (
               <div className="flex justify-between text-slate-600 print:text-black">
-                <span>Integrated Tax (IGST):</span>
+                <span>Integrated Tax (IGST @ 18%):</span>
                 <span className="font-mono font-semibold">{formatPaise(invoice.igst_paise)}</span>
               </div>
             ) : (
               <>
                 <div className="flex justify-between text-slate-600 print:text-black">
-                  <span>Central Tax (CGST):</span>
+                  <span>Central Tax (CGST @ 9%):</span>
                   <span className="font-mono font-semibold">{formatPaise(invoice.cgst_paise)}</span>
                 </div>
                 <div className="flex justify-between text-slate-600 print:text-black">
-                  <span>State Tax (SGST):</span>
+                  <span>State Tax (SGST @ 9%):</span>
                   <span className="font-mono font-semibold">{formatPaise(invoice.sgst_paise)}</span>
                 </div>
               </>
             )}
             <div className="flex justify-between text-slate-600 print:text-black border-t border-slate-200 print:border-slate-400 pt-1">
-              <span>Total GST Tax:</span>
+              <span>Total GST Tax (18%):</span>
               <span className="font-mono font-semibold">{formatPaise(invoice.total_tax_paise)}</span>
             </div>
             <div className="flex justify-between text-slate-900 border-t-2 border-slate-900 pt-1.5 font-bold text-sm print:text-xs">
-              <span className="uppercase">Grand Total:</span>
+              <span className="uppercase">Grand Total (Net Payable):</span>
               <span className="font-mono text-emerald-950 print:text-black text-base print:text-sm font-black">
                 {formatPaise(invoice.total_amount_paise)}
               </span>
