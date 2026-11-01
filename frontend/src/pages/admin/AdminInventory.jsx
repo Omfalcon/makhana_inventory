@@ -46,7 +46,7 @@ export default function AdminInventory() {
     sku: '',
     sellingPriceInr: '',
     lowStockThreshold: 10,
-    gstRate: 18.00,
+    gstRate: 5.00,
     hsnCode: '19041090'
   });
 
@@ -175,7 +175,7 @@ export default function AdminInventory() {
         sku: '',
         sellingPriceInr: '',
         lowStockThreshold: 10,
-        gstRate: 18.00,
+        gstRate: 5.00,
         hsnCode: '19041090'
       });
       await loadProducts();
@@ -304,7 +304,7 @@ export default function AdminInventory() {
         <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-xs">
           <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">Standard Tax Class</span>
           <div className="flex items-baseline justify-between mt-1">
-            <span className="text-2xl font-black font-mono text-slate-900">18%</span>
+            <span className="text-2xl font-black font-mono text-slate-900">5%</span>
             <span className="text-xs font-mono text-slate-500">GST (Makhana)</span>
           </div>
         </div>

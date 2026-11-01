@@ -332,10 +332,10 @@ export default function SalesmanCatalogue({ onNavigate }) {
               </div>
               <div className="min-w-0">
                 <span className="text-[9.5px] xs:text-[11px] font-bold uppercase tracking-wider text-slate-500 block truncate">
-                  Total Payable (+18% GST)
+                  Total Payable (+5% GST)
                 </span>
                 <span className="text-base xs:text-xl sm:text-2xl font-black font-mono text-slate-900 truncate block">
-                  {formatPaise(Math.round(subtotalPaise * 1.18))}
+                  {formatPaise(Math.round(subtotalPaise * 1.05))}
                 </span>
                 <span className="text-[10px] font-mono text-slate-500 block truncate">
                   Base: {formatPaise(subtotalPaise)}

@@ -93,7 +93,7 @@ function calculateOrderTotals(items, isInclusive, isInterState) {
         const itemResult = calculateItemGst({
             unitPricePaise: item.unitPricePaise || item.unit_price_paise,
             quantity: item.quantity,
-            gstRatePercent: item.gstRate || item.gst_rate || 18,
+            gstRatePercent: item.gstRate || item.gst_rate || 5,
             isInclusive,
             isInterState
         });

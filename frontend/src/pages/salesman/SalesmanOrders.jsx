@@ -5,7 +5,7 @@ import { formatPaise, formatDateTime } from '../../lib/formatters';
 import { OrderStatusBadge } from '../../components/Badge';
 import { useWebSocketEvent } from '../../context/WebSocketContext';
 import Modal from '../../components/Modal';
-import { Search, Phone, Calendar, Package, Eye, MapPin, Printer } from 'lucide-react';
+import { Search, Phone, Calendar, Package, Eye, MapPin } from 'lucide-react';
 
 export default function SalesmanOrders() {
   const [orders, setOrders] = useState([]);
@@ -191,7 +191,7 @@ export default function SalesmanOrders() {
               <button
                 type="button"
                 onClick={() => setSelectedOrder(null)}
-                className="w-full py-3 bg-slate-800 text-white font-bold text-xs uppercase rounded-xl hover:bg-slate-900 transition shadow-xs"
+                className="w-full py-3 bg-slate-800 text-white font-bold text-xs uppercase rounded-xl hover:bg-slate-900 transition shadow-xs cursor-pointer"
               >
                 Close
               </button>
@@ -199,6 +199,8 @@ export default function SalesmanOrders() {
           </div>
         )}
       </Modal>
+
+
     </div>
   );
 }

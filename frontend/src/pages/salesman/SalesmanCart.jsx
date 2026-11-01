@@ -6,7 +6,7 @@ import { formatPaise } from '../../lib/formatters';
 import { 
   Trash2, Plus, Minus, ArrowLeft, CheckCircle2, AlertCircle, 
   ShoppingBag, Loader2, Receipt, CreditCard, Banknote, QrCode, 
-  Printer, ArrowRight, Store, Phone, MapPin, FileText
+  ArrowRight, Store, Phone, MapPin, FileText
 } from 'lucide-react';
 
 const localCustomerCache = new Map();
@@ -27,6 +27,7 @@ export default function SalesmanCart({ onNavigate }) {
   const [error, setError] = useState(null);
   const [placedOrder, setPlacedOrder] = useState(null);
   const [paymentMode, setPaymentMode] = useState('cash'); // 'cash' | 'upi' | 'credit'
+  const [applyGst, setApplyGst] = useState(true);
 
   const [lookupLoading, setLookupLoading] = useState(false);
   const [lookupStatus, setLookupStatus] = useState(null);
@@ -161,7 +162,8 @@ export default function SalesmanCart({ onNavigate }) {
           productId: i.product.id,
           quantity: i.quantity
         })),
-        idempotencyKey
+        idempotencyKey,
+        applyGst
       };
 
       const res = await api.orders.create(payload);
@@ -201,11 +203,10 @@ export default function SalesmanCart({ onNavigate }) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [placedOrder, handlePlaceOrder]);
 
-  // Tax Calculations: 18% GST applied over base price of items ordered
+  // Tax Calculations: 5% GST applied over base price when applyGst is true
   const taxablePaise = subtotalPaise;
-  const cgstPaise = Math.round((taxablePaise * 9) / 100);
-  const sgstPaise = Math.round((taxablePaise * 9) / 100);
-  const totalGstPaise = cgstPaise + sgstPaise;
+  const GST_RATE = 0.05;
+  const totalGstPaise = applyGst ? Math.round(taxablePaise * GST_RATE) : 0;
   const totalPayablePaise = taxablePaise + totalGstPaise;
 
   // Order Confirmation View (Receipt Card)
@@ -363,7 +364,7 @@ export default function SalesmanCart({ onNavigate }) {
                         {product.name}
                       </h4>
                       <span className="text-[10px] font-mono bg-emerald-50 text-emerald-800 px-1.5 py-0.5 rounded border border-emerald-200 font-bold">
-                        GST {product.gst_rate || 18}%
+                        GST {applyGst ? (product.gst_rate || 5) : 0}%
                       </span>
                     </div>
                     <span className="text-xs text-slate-500 font-mono font-medium block mt-0.5">
@@ -417,12 +418,52 @@ export default function SalesmanCart({ onNavigate }) {
             </div>
           </div>
 
+          {/* GST Toggle Option */}
+          <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-xs">
+            <div
+              className={`flex items-center justify-between p-3.5 rounded-xl border transition cursor-pointer select-none ${
+                applyGst
+                  ? 'bg-emerald-50/80 border-emerald-300 text-emerald-950'
+                  : 'bg-slate-50 border-slate-200 text-slate-700'
+              }`}
+              onClick={() => setApplyGst(!applyGst)}
+            >
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  id="applyGstToggle"
+                  checked={applyGst}
+                  onChange={(e) => setApplyGst(e.target.checked)}
+                  className="w-5 h-5 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer"
+                  onClick={(e) => e.stopPropagation()}
+                />
+                <div>
+                  <label htmlFor="applyGstToggle" className="text-sm font-black text-slate-900 cursor-pointer block">
+                    Charge GST (5%)
+                  </label>
+                  <span className="text-xs text-slate-500 font-medium">
+                    {applyGst
+                      ? 'Bill will generate INCLUDING 5% GST'
+                      : 'Bill will generate WITHOUT GST (Base price only)'}
+                  </span>
+                </div>
+              </div>
+              <span className={`text-xs font-mono font-bold px-2.5 py-1 rounded-lg border ${
+                applyGst
+                  ? 'bg-emerald-600 text-white border-emerald-700'
+                  : 'bg-slate-200 text-slate-700 border-slate-300'
+              }`}>
+                {applyGst ? 'GST 5% ON' : 'GST OFF'}
+              </span>
+            </div>
+          </div>
+
           {/* GST Tax Breakdown Card */}
           <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-xs space-y-2.5">
             <div className="flex items-center justify-between pb-2 border-b border-slate-200">
               <span className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
                 <Receipt className="w-4 h-4 text-emerald-700" />
-                <span>GST Tax Computation (18% Over Base Price)</span>
+                <span>Bill Summary {applyGst ? '(Including 5% GST)' : '(Without GST)'}</span>
               </span>
               <span className="text-[11px] font-mono text-slate-500 font-semibold">
                 HSN 19041090
@@ -434,17 +475,11 @@ export default function SalesmanCart({ onNavigate }) {
                 <span>Items Base Price (Taxable):</span>
                 <span className="font-mono tabular-nums text-slate-800 font-bold">{formatPaise(taxablePaise)}</span>
               </div>
-              <div className="flex justify-between">
-                <span>Central Tax (CGST @ 9.0%):</span>
-                <span className="font-mono tabular-nums text-slate-800">{formatPaise(cgstPaise)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>State Tax (SGST @ 9.0%):</span>
-                <span className="font-mono tabular-nums text-slate-800">{formatPaise(sgstPaise)}</span>
-              </div>
               <div className="flex justify-between border-t border-slate-100 pt-1.5 text-slate-700 font-bold">
-                <span>Total GST Amount (18%):</span>
-                <span className="font-mono tabular-nums text-emerald-800 font-bold">+{formatPaise(totalGstPaise)}</span>
+                <span>GST ({applyGst ? '5%' : '0%'}):</span>
+                <span className="font-mono tabular-nums text-emerald-800 font-bold">
+                  {applyGst ? `+${formatPaise(totalGstPaise)}` : '₹0.00 (Unticked)'}
+                </span>
               </div>
             </div>
 
@@ -454,7 +489,9 @@ export default function SalesmanCart({ onNavigate }) {
                 <span className="text-xs uppercase font-extrabold text-slate-900 tracking-wide block">
                   Total Payable Amount:
                 </span>
-                <span className="text-[10.5px] text-slate-500 font-semibold">Base Price + 18% GST</span>
+                <span className="text-[10.5px] text-slate-500 font-semibold">
+                  {applyGst ? 'Base Price + 5% GST' : 'Base Price Only (No GST)'}
+                </span>
               </div>
               <span className="font-mono font-black text-xl text-emerald-800 tabular-nums">
                 {formatPaise(totalPayablePaise)}
@@ -620,12 +657,12 @@ export default function SalesmanCart({ onNavigate }) {
               {submitting ? (
                 <>
                   <Loader2 className="w-4.5 h-4.5 xs:w-5 xs:h-5 animate-spin" />
-                  <span>Generating Bill...</span>
+                  <span>Placing Order...</span>
                 </>
               ) : (
                 <>
-                  <Printer className="w-4.5 h-4.5 xs:w-5 xs:h-5 text-amber-300 shrink-0" />
-                  <span className="truncate">CONFIRM &amp; PRINT BILL</span>
+                  <CheckCircle2 className="w-4.5 h-4.5 xs:w-5 xs:h-5 text-amber-300 shrink-0" />
+                  <span className="truncate">CONFIRM &amp; PLACE ORDER</span>
                   <span className="hidden sm:inline bg-emerald-800 px-2 py-0.5 rounded text-xs font-mono text-emerald-100">[F9]</span>
                 </>
               )}

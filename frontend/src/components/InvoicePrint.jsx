@@ -141,7 +141,7 @@ export default function InvoicePrint({ invoice, onClose }) {
                 Tax Regime:
               </span>
               <p className="font-bold text-slate-800 mt-0.5 text-xs print:text-[10px]">
-                {isInterState ? 'Inter-State (IGST)' : 'Intra-State (CGST + SGST)'}
+                {invoice.total_tax_paise > 0 ? (isInterState ? 'Inter-State (IGST)' : 'GST') : 'Without GST'}
               </p>
             </div>
             <div>
@@ -167,61 +167,46 @@ export default function InvoicePrint({ invoice, onClose }) {
                 <th className="p-1.5 border-r border-slate-300 print:border-slate-800 text-right">Unit Rate (Base)</th>
                 <th className="p-1.5 border-r border-slate-300 print:border-slate-800 text-right">Taxable Base (₹)</th>
                 <th className="p-1.5 border-r border-slate-300 print:border-slate-800 text-center">GST %</th>
-                {isInterState ? (
-                  <th className="p-1.5 border-r border-slate-300 print:border-slate-800 text-right">IGST (₹)</th>
-                ) : (
-                  <>
-                    <th className="p-1.5 border-r border-slate-300 print:border-slate-800 text-right">CGST (₹)</th>
-                    <th className="p-1.5 border-r border-slate-300 print:border-slate-800 text-right">SGST (₹)</th>
-                  </>
-                )}
+                <th className="p-1.5 border-r border-slate-300 print:border-slate-800 text-right">GST (₹)</th>
                 <th className="p-1.5 text-right">Total (₹)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 print:divide-slate-800">
-              {items.map((item, index) => (
-                <tr key={index} className="text-xs print:text-[10px]">
-                  <td className="p-1.5 border-r border-slate-200 print:border-slate-800 text-center font-medium text-slate-500 print:text-black">
-                    {index + 1}
-                  </td>
-                  <td className="p-1.5 border-r border-slate-200 print:border-slate-800">
-                    <span className="font-bold text-slate-900 block">{item.product_name || item.product_name_snapshot}</span>
-                    <span className="text-[10px] font-mono text-slate-500 print:text-slate-700">{item.sku || item.sku_snapshot}</span>
-                  </td>
-                  <td className="p-1.5 border-r border-slate-200 print:border-slate-800 font-mono text-center text-slate-700">
-                    {item.hsn_code || '19041090'}
-                  </td>
-                  <td className="p-1.5 border-r border-slate-200 print:border-slate-800 text-center font-bold">
-                    {item.quantity}
-                  </td>
-                  <td className="p-1.5 border-r border-slate-200 print:border-slate-800 text-right font-mono">
-                    {formatPaise(item.unit_price_paise)}
-                  </td>
-                  <td className="p-1.5 border-r border-slate-200 print:border-slate-800 text-right font-mono">
-                    {formatPaise(item.taxable_value_paise)}
-                  </td>
-                  <td className="p-1.5 border-r border-slate-200 print:border-slate-800 text-center">
-                    {item.gst_rate}%
-                  </td>
-                  {isInterState ? (
-                    <td className="p-1.5 border-r border-slate-200 print:border-slate-800 text-right font-mono">
-                      {formatPaise(item.igst_paise)}
+              {items.map((item, index) => {
+                const itemGst = (item.cgst_paise || 0) + (item.sgst_paise || 0) + (item.igst_paise || 0);
+                return (
+                  <tr key={index} className="text-xs print:text-[10px]">
+                    <td className="p-1.5 border-r border-slate-200 print:border-slate-800 text-center font-medium text-slate-500 print:text-black">
+                      {index + 1}
                     </td>
-                  ) : (
-                    <>
-                      <td className="p-1.5 border-r border-slate-200 print:border-slate-800 text-right font-mono">
-                        {formatPaise(item.cgst_paise)}
-                      </td>
-                      <td className="p-1.5 border-r border-slate-200 print:border-slate-800 text-right font-mono">
-                        {formatPaise(item.sgst_paise)}
-                      </td>
-                    </>
-                  )}
-                  <td className="p-1.5 text-right font-mono font-bold">
-                    {formatPaise(item.line_total_paise)}
-                  </td>
-                </tr>
-              ))}
+                    <td className="p-1.5 border-r border-slate-200 print:border-slate-800">
+                      <span className="font-bold text-slate-900 block">{item.product_name || item.product_name_snapshot}</span>
+                      <span className="text-[10px] font-mono text-slate-500 print:text-slate-700">{item.sku || item.sku_snapshot}</span>
+                    </td>
+                    <td className="p-1.5 border-r border-slate-200 print:border-slate-800 font-mono text-center text-slate-700">
+                      {item.hsn_code || '19041090'}
+                    </td>
+                    <td className="p-1.5 border-r border-slate-200 print:border-slate-800 text-center font-bold">
+                      {item.quantity}
+                    </td>
+                    <td className="p-1.5 border-r border-slate-200 print:border-slate-800 text-right font-mono">
+                      {formatPaise(item.unit_price_paise)}
+                    </td>
+                    <td className="p-1.5 border-r border-slate-200 print:border-slate-800 text-right font-mono">
+                      {formatPaise(item.taxable_value_paise)}
+                    </td>
+                    <td className="p-1.5 border-r border-slate-200 print:border-slate-800 text-center">
+                      {item.gst_rate || 0}%
+                    </td>
+                    <td className="p-1.5 border-r border-slate-200 print:border-slate-800 text-right font-mono">
+                      {formatPaise(itemGst)}
+                    </td>
+                    <td className="p-1.5 text-right font-mono font-bold">
+                      {formatPaise(item.line_total_paise)}
+                    </td>
+                  </tr>
+                );
+              })}
 
               {/* Table Subtotals Row */}
               <tr className="bg-slate-50 print:bg-slate-50 font-bold border-t-2 border-slate-300 print:border-slate-800 text-xs print:text-[10px]">
@@ -236,20 +221,9 @@ export default function InvoicePrint({ invoice, onClose }) {
                   {formatPaise(invoice.taxable_value_paise)}
                 </td>
                 <td className="p-1.5 border-r border-slate-300 print:border-slate-800" />
-                {isInterState ? (
-                  <td className="p-1.5 border-r border-slate-300 print:border-slate-800 text-right font-mono">
-                    {formatPaise(invoice.igst_paise)}
-                  </td>
-                ) : (
-                  <>
-                    <td className="p-1.5 border-r border-slate-300 print:border-slate-800 text-right font-mono">
-                      {formatPaise(invoice.cgst_paise)}
-                    </td>
-                    <td className="p-1.5 border-r border-slate-300 print:border-slate-800 text-right font-mono">
-                      {formatPaise(invoice.sgst_paise)}
-                    </td>
-                  </>
-                )}
+                <td className="p-1.5 border-r border-slate-300 print:border-slate-800 text-right font-mono">
+                  {formatPaise(invoice.total_tax_paise || ((invoice.cgst_paise || 0) + (invoice.sgst_paise || 0) + (invoice.igst_paise || 0)))}
+                </td>
                 <td className="p-1.5 text-right font-mono font-black text-slate-900">
                   {formatPaise(invoice.total_amount_paise)}
                 </td>
@@ -283,26 +257,9 @@ export default function InvoicePrint({ invoice, onClose }) {
               <span>Taxable Value (Base Price):</span>
               <span className="font-mono font-semibold">{formatPaise(invoice.taxable_value_paise)}</span>
             </div>
-            {isInterState ? (
-              <div className="flex justify-between text-slate-600 print:text-black">
-                <span>Integrated Tax (IGST @ 18%):</span>
-                <span className="font-mono font-semibold">{formatPaise(invoice.igst_paise)}</span>
-              </div>
-            ) : (
-              <>
-                <div className="flex justify-between text-slate-600 print:text-black">
-                  <span>Central Tax (CGST @ 9%):</span>
-                  <span className="font-mono font-semibold">{formatPaise(invoice.cgst_paise)}</span>
-                </div>
-                <div className="flex justify-between text-slate-600 print:text-black">
-                  <span>State Tax (SGST @ 9%):</span>
-                  <span className="font-mono font-semibold">{formatPaise(invoice.sgst_paise)}</span>
-                </div>
-              </>
-            )}
-            <div className="flex justify-between text-slate-600 print:text-black border-t border-slate-200 print:border-slate-400 pt-1">
-              <span>Total GST Tax (18%):</span>
-              <span className="font-mono font-semibold">{formatPaise(invoice.total_tax_paise)}</span>
+            <div className="flex justify-between text-slate-600 print:text-black">
+              <span>GST {invoice.total_tax_paise > 0 ? '(5%)' : '(0%)'}:</span>
+              <span className="font-mono font-semibold">{formatPaise(invoice.total_tax_paise || 0)}</span>
             </div>
             <div className="flex justify-between text-slate-900 border-t-2 border-slate-900 pt-1.5 font-bold text-sm print:text-xs">
               <span className="uppercase">Grand Total (Net Payable):</span>

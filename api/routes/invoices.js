@@ -4,11 +4,23 @@ const router = express.Router();
 const { authenticate, requireRole } = require('../middleware/auth');
 const { supabaseAdmin } = require('../utils/supabase');
 
-// POST /api/invoices/generate/:orderId (Admin only)
+// POST /api/invoices/generate/:orderId
 // Generate an immutable sequential GST invoice snapshot
-router.post('/generate/:orderId', authenticate, requireRole('ADMIN'), async (req, res) => {
+router.post('/generate/:orderId', authenticate, async (req, res) => {
     try {
         const { orderId } = req.params;
+
+        // Salesmen can generate invoice for their own orders; Admin for all
+        if (req.profile.role !== 'ADMIN') {
+            const { data: order } = await supabaseAdmin
+                .from('orders')
+                .select('salesman_id')
+                .eq('id', orderId)
+                .single();
+            if (!order || order.salesman_id !== req.profile.id) {
+                return res.status(403).json({ error: 'Forbidden', message: 'You cannot generate invoice for this order.' });
+            }
+        }
 
         const { data, error } = await supabaseAdmin.rpc('generate_invoice_atomic', {
             p_order_id: orderId,

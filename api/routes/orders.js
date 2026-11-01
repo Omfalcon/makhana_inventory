@@ -21,7 +21,8 @@ router.post('/place', authenticate, async (req, res) => {
             customerStateCode = '10',
             customerGstin = null,
             items,
-            idempotencyKey
+            idempotencyKey,
+            applyGst = true
         } = req.body;
 
         // Validation
@@ -75,6 +76,62 @@ router.post('/place', authenticate, async (req, res) => {
             });
         }
 
+        // If salesman unticked GST (applyGst === false):
+        // Set taxes to 0 on order_items and order
+        if (applyGst === false) {
+            const { data: orderItems, error: itemsErr } = await supabaseAdmin
+                .from('order_items')
+                .select('id, taxable_value_paise')
+                .eq('order_id', data.order_id);
+
+            if (!itemsErr && orderItems) {
+                let totalWithoutTax = 0;
+                for (const item of orderItems) {
+                    totalWithoutTax += item.taxable_value_paise;
+                    await supabaseAdmin
+                        .from('order_items')
+                        .update({
+                            gst_rate_snapshot: 0,
+                            cgst_paise: 0,
+                            sgst_paise: 0,
+                            igst_paise: 0,
+                            line_total_paise: item.taxable_value_paise
+                        })
+                        .eq('id', item.id);
+                }
+
+                await supabaseAdmin
+                    .from('orders')
+                    .update({
+                        total_tax_paise: 0,
+                        total_amount_paise: totalWithoutTax
+                    })
+                    .eq('id', data.order_id);
+
+                data.total_tax_paise = 0;
+                data.total_amount_paise = totalWithoutTax;
+            }
+        }
+
+        // Automatically generate invoice snapshot for the order
+        let generatedInvoice = null;
+        try {
+            const { data: invRes, error: invErr } = await supabaseAdmin.rpc('generate_invoice_atomic', {
+                p_order_id: data.order_id,
+                p_actor_id: req.profile.id
+            });
+            if (!invErr && invRes?.invoice_id) {
+                const { data: invData } = await supabaseAdmin
+                    .from('invoices')
+                    .select('*')
+                    .eq('id', invRes.invoice_id)
+                    .single();
+                generatedInvoice = invData;
+            }
+        } catch (invEx) {
+            console.warn('Auto invoice generation skipped:', invEx.message);
+        }
+
         if (customerPhone) {
             const cleanDigits = customerPhone.replace(/\D/g, '');
             const custObj = {
@@ -108,7 +165,8 @@ router.post('/place', authenticate, async (req, res) => {
 
         return res.status(201).json({
             success: true,
-            order: data
+            order: data,
+            invoice: generatedInvoice
         });
     } catch (err) {
         console.error('Unexpected error placing order:', err);

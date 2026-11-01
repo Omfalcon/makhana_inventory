@@ -20,7 +20,7 @@ export default function AdminSettings() {
     email: '',
     invoice_prefix: 'MKH',
     next_invoice_number: 1001,
-    default_gst_rate: 18.00,
+    default_gst_rate: 5.00,
     prices_are_gst_inclusive: false,
     bank_name: '',
     bank_account_no: '',
