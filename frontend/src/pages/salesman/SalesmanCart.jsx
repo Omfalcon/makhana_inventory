@@ -6,7 +6,7 @@ import { formatPaise } from '../../lib/formatters';
 import { 
   Trash2, Plus, Minus, ArrowLeft, CheckCircle2, AlertCircle, 
   ShoppingBag, Loader2, Receipt, CreditCard, Banknote, QrCode, 
-  ArrowRight, Store, Phone, MapPin, FileText
+  ArrowRight, Store, Phone, MapPin, FileText, Tag
 } from 'lucide-react';
 
 const localCustomerCache = new Map();
@@ -15,11 +15,8 @@ export default function SalesmanCart({ onNavigate }) {
   const {
     items,
     updateQuantity,
-    updateDiscount,
     removeFromCart,
     clearCart,
-    grossSubtotalPaise,
-    totalDiscountPaise,
     subtotalPaise,
     totalUnits,
     customerInfo,
@@ -31,6 +28,7 @@ export default function SalesmanCart({ onNavigate }) {
   const [placedOrder, setPlacedOrder] = useState(null);
   const [paymentMode, setPaymentMode] = useState('cash'); // 'cash' | 'upi' | 'credit'
   const [applyGst, setApplyGst] = useState(true);
+  const [discountPercent, setDiscountPercent] = useState(0);
 
   const [lookupLoading, setLookupLoading] = useState(false);
   const [lookupStatus, setLookupStatus] = useState(null);
@@ -163,15 +161,16 @@ export default function SalesmanCart({ onNavigate }) {
         customerGstin: customerInfo.customerGstin?.trim() || null,
         items: items.map(i => ({
           productId: i.product.id,
-          quantity: i.quantity,
-          discountPercent: i.discountPercent || 0
+          quantity: i.quantity
         })),
+        discountPercent: discountPercent > 0 ? discountPercent : 0,
         idempotencyKey,
         applyGst
       };
 
       const res = await api.orders.create(payload);
       setPlacedOrder(res.order);
+      setDiscountPercent(0);
       clearCart();
     } catch (err) {
       console.error('Failed to place order:', err);
@@ -207,8 +206,10 @@ export default function SalesmanCart({ onNavigate }) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [placedOrder, handlePlaceOrder]);
 
-  // Tax Calculations: 5% GST applied over base price when applyGst is true
-  const taxablePaise = subtotalPaise;
+  // Calculations: Discount applies over total order base value, then GST applies on discounted amount
+  const grossBasePaise = subtotalPaise;
+  const discountPaise = discountPercent > 0 ? Math.round((grossBasePaise * discountPercent) / 100) : 0;
+  const taxablePaise = Math.max(0, grossBasePaise - discountPaise);
   const GST_RATE = 0.05;
   const totalGstPaise = applyGst ? Math.round(taxablePaise * GST_RATE) : 0;
   const totalPayablePaise = taxablePaise + totalGstPaise;
@@ -342,7 +343,7 @@ export default function SalesmanCart({ onNavigate }) {
 
       {/* Main 2-Column POS Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-        {/* Left Column (Items Ledger + Tax Breakdown) */}
+        {/* Left Column (Items Ledger + Total Discount + Tax Breakdown) */}
         <div className="lg:col-span-7 space-y-4">
           {/* Running Items Ledger */}
           <div className="bg-white border border-slate-200/90 rounded-2xl shadow-xs overflow-hidden">
@@ -360,108 +361,107 @@ export default function SalesmanCart({ onNavigate }) {
 
             {/* Table layout on desktop, responsive stack on mobile */}
             <div className="divide-y divide-slate-100">
-              {items.map(({ product, quantity, discountPercent }) => {
-                const grossItemPaise = product.selling_price_paise * quantity;
-                const discPct = discountPercent || 0;
-                const itemDiscountPaise = Math.round((grossItemPaise * discPct) / 100);
-                const discountedTaxablePaise = Math.max(0, grossItemPaise - itemDiscountPaise);
-
-                return (
-                  <div key={product.id} className="p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/60 transition">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-bold text-slate-900 text-sm sm:text-base truncate">
-                          {product.name}
-                        </h4>
-                        <span className="text-[10px] font-mono bg-emerald-50 text-emerald-800 px-1.5 py-0.5 rounded border border-emerald-200 font-bold shrink-0">
-                          GST {applyGst ? (product.gst_rate || 5) : 0}%
-                        </span>
-                        {discPct > 0 && (
-                          <span className="text-[10px] font-mono bg-amber-50 text-amber-900 border border-amber-300 px-1.5 py-0.5 rounded font-bold shrink-0">
-                            {discPct}% OFF
-                          </span>
-                        )}
-                      </div>
-                      <span className="text-xs text-slate-500 font-mono font-medium block mt-0.5">
-                        Base Rate: {formatPaise(product.selling_price_paise)} / unit • In Stock: {product.stock_quantity}
+              {items.map(({ product, quantity }) => (
+                <div key={product.id} className="p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/60 transition">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-bold text-slate-900 text-sm sm:text-base truncate">
+                        {product.name}
+                      </h4>
+                      <span className="text-[10px] font-mono bg-emerald-50 text-emerald-800 px-1.5 py-0.5 rounded border border-emerald-200 font-bold shrink-0">
+                        GST {applyGst ? (product.gst_rate || 5) : 0}%
                       </span>
                     </div>
+                    <span className="text-xs text-slate-500 font-mono font-medium block mt-0.5">
+                      Base Rate: {formatPaise(product.selling_price_paise)} / unit • In Stock: {product.stock_quantity}
+                    </span>
+                  </div>
 
-                    {/* Quantity Stepper, Optional Discount & Line Total */}
-                    <div className="flex flex-wrap items-center justify-between sm:justify-end gap-2.5 sm:gap-4">
-                      {/* Stepper */}
-                      <div className="flex items-center bg-white border border-slate-300 rounded-lg overflow-hidden shadow-2xs">
-                        <button
-                          type="button"
-                          onClick={() => updateQuantity(product.id, quantity - 1)}
-                          className="w-8 h-8 flex items-center justify-center bg-slate-50 hover:bg-slate-100 text-slate-800 font-bold border-r border-slate-200 transition"
-                        >
-                          <Minus className="w-3.5 h-3.5" />
-                        </button>
-                        <span className="w-9 text-center font-bold text-xs font-mono text-slate-900">{quantity}</span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (quantity < product.stock_quantity) {
-                              updateQuantity(product.id, quantity + 1);
-                            }
-                          }}
-                          disabled={quantity >= product.stock_quantity}
-                          className="w-8 h-8 flex items-center justify-center bg-slate-50 hover:bg-slate-100 text-slate-800 font-bold border-l border-slate-200 transition disabled:opacity-30"
-                        >
-                          <Plus className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
+                  {/* Quantity Stepper & Line Total */}
+                  <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-5">
+                    {/* Stepper */}
+                    <div className="flex items-center bg-white border border-slate-300 rounded-lg overflow-hidden shadow-2xs">
+                      <button
+                        type="button"
+                        onClick={() => updateQuantity(product.id, quantity - 1)}
+                        className="w-8 h-8 flex items-center justify-center bg-slate-50 hover:bg-slate-100 text-slate-800 font-bold border-r border-slate-200 transition"
+                      >
+                        <Minus className="w-3.5 h-3.5" />
+                      </button>
+                      <span className="w-9 text-center font-bold text-xs font-mono text-slate-900">{quantity}</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (quantity < product.stock_quantity) {
+                            updateQuantity(product.id, quantity + 1);
+                          }
+                        }}
+                        disabled={quantity >= product.stock_quantity}
+                        className="w-8 h-8 flex items-center justify-center bg-slate-50 hover:bg-slate-100 text-slate-800 font-bold border-l border-slate-200 transition disabled:opacity-30"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
 
-                      {/* Optional Discount Input */}
-                      <div className="flex items-center gap-1 bg-slate-50 border border-slate-300 rounded-lg px-2 py-1 shadow-2xs" title="Optional Discount %">
-                        <span className="text-[10px] font-bold uppercase text-slate-500">Disc:</span>
-                        <input
-                          type="number"
-                          min="0"
-                          max="100"
-                          step="any"
-                          placeholder="0"
-                          value={discPct > 0 ? discPct : ''}
-                          onChange={(e) => updateDiscount(product.id, e.target.value)}
-                          className="w-12 text-center text-xs font-mono font-bold text-slate-900 bg-white border border-slate-200 rounded px-1 py-0.5 focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
-                        />
-                        <span className="text-xs font-bold text-slate-500">%</span>
-                      </div>
-
-                      {/* Subtotal */}
-                      <div className="text-right min-w-[95px]">
-                        {discPct > 0 ? (
-                          <>
-                            <span className="text-[10.5px] font-mono text-slate-400 line-through block tabular-nums">
-                              {formatPaise(grossItemPaise)}
-                            </span>
-                            <span className="font-mono font-bold text-sm sm:text-base text-emerald-900 block tabular-nums">
-                              {formatPaise(discountedTaxablePaise)}
-                            </span>
-                            <span className="text-[10px] font-bold text-emerald-700 block tabular-nums">
-                              Saved {formatPaise(itemDiscountPaise)}
-                            </span>
-                          </>
-                        ) : (
-                          <span className="font-mono font-bold text-sm sm:text-base text-slate-900 block tabular-nums">
-                            {formatPaise(grossItemPaise)}
-                          </span>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => removeFromCart(product.id)}
-                          className="text-[11px] text-rose-600 hover:text-rose-700 font-semibold flex items-center gap-1 justify-end mt-0.5 transition"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                          <span>Remove</span>
-                        </button>
-                      </div>
+                    {/* Subtotal */}
+                    <div className="text-right min-w-[85px]">
+                      <span className="font-mono font-bold text-sm sm:text-base text-slate-900 block tabular-nums">
+                        {formatPaise(product.selling_price_paise * quantity)}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => removeFromCart(product.id)}
+                        className="text-[11px] text-rose-600 hover:text-rose-700 font-semibold flex items-center gap-1 justify-end mt-0.5 transition"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        <span>Remove</span>
+                      </button>
                     </div>
                   </div>
-                );
-              })}
+                </div>
+              ))}
             </div>
+          </div>
+
+          {/* Total Order Discount Option */}
+          <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-xs space-y-2.5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+              <div className="flex items-center gap-2">
+                <Tag className="w-4 h-4 text-emerald-700 shrink-0" />
+                <div>
+                  <label htmlFor="orderDiscountInput" className="text-xs font-bold text-slate-900 uppercase tracking-wider block cursor-pointer">
+                    Order Discount % (Optional)
+                  </label>
+                  <span className="text-[11px] text-slate-500 font-medium">
+                    Applies on total order base value, then GST is applied on discounted amount
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 self-start sm:self-auto bg-slate-50 border border-slate-300 rounded-xl px-3 py-1.5 shadow-2xs">
+                <span className="text-xs font-bold text-slate-600">Discount:</span>
+                <input
+                  id="orderDiscountInput"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="any"
+                  placeholder="0"
+                  value={discountPercent > 0 ? discountPercent : ''}
+                  onChange={(e) => {
+                    const val = parseFloat(e.target.value);
+                    setDiscountPercent(isNaN(val) ? 0 : Math.max(0, Math.min(100, val)));
+                  }}
+                  className="w-16 text-center text-sm font-mono font-bold text-slate-900 bg-white border border-slate-200 rounded-lg px-1.5 py-0.5 focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
+                />
+                <span className="text-xs font-black text-slate-700">%</span>
+              </div>
+            </div>
+            {discountPercent > 0 && (
+              <div className="flex justify-between items-center text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-3.5 py-2 rounded-xl">
+                <span>{discountPercent}% Order Discount Deducted:</span>
+                <span className="font-mono tabular-nums text-sm">-{formatPaise(discountPaise)}</span>
+              </div>
+            )}
           </div>
 
           {/* GST Toggle Option */}
@@ -517,26 +517,21 @@ export default function SalesmanCart({ onNavigate }) {
             </div>
 
             <div className="space-y-1.5 text-xs font-semibold text-slate-600">
-              {totalDiscountPaise > 0 ? (
+              <div className="flex justify-between">
+                <span>Total Order Base Value:</span>
+                <span className="font-mono tabular-nums text-slate-800 font-bold">{formatPaise(grossBasePaise)}</span>
+              </div>
+              {discountPercent > 0 && (
                 <>
-                  <div className="flex justify-between">
-                    <span>Items Gross Base Price:</span>
-                    <span className="font-mono tabular-nums text-slate-800">{formatPaise(grossSubtotalPaise)}</span>
-                  </div>
                   <div className="flex justify-between text-emerald-700 font-bold">
-                    <span>Product Discount:</span>
-                    <span className="font-mono tabular-nums">-{formatPaise(totalDiscountPaise)}</span>
+                    <span>Order Discount ({discountPercent}%):</span>
+                    <span className="font-mono tabular-nums">-{formatPaise(discountPaise)}</span>
                   </div>
                   <div className="flex justify-between border-t border-slate-100 pt-1 text-slate-800 font-bold">
-                    <span>Net Taxable Base:</span>
+                    <span>Discounted Taxable Base:</span>
                     <span className="font-mono tabular-nums">{formatPaise(taxablePaise)}</span>
                   </div>
                 </>
-              ) : (
-                <div className="flex justify-between">
-                  <span>Items Base Price (Taxable):</span>
-                  <span className="font-mono tabular-nums text-slate-800 font-bold">{formatPaise(taxablePaise)}</span>
-                </div>
               )}
               <div className="flex justify-between border-t border-slate-100 pt-1.5 text-slate-700 font-bold">
                 <span>GST ({applyGst ? '5%' : '0%'} on Discounted Base):</span>
@@ -554,8 +549,8 @@ export default function SalesmanCart({ onNavigate }) {
                 </span>
                 <span className="text-[10.5px] text-slate-500 font-semibold">
                   {applyGst
-                    ? totalDiscountPaise > 0 ? 'Discounted Base + 5% GST' : 'Base Price + 5% GST'
-                    : totalDiscountPaise > 0 ? 'Discounted Base Only (No GST)' : 'Base Price Only (No GST)'}
+                    ? discountPercent > 0 ? 'Discounted Base + 5% GST' : 'Base Price + 5% GST'
+                    : discountPercent > 0 ? 'Discounted Base Only (No GST)' : 'Base Price Only (No GST)'}
                 </span>
               </div>
               <span className="font-mono font-black text-xl text-emerald-800 tabular-nums">

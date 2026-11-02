@@ -417,42 +417,33 @@ export default function AdminOrders() {
             <div>
               <span className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">Itemized Ledger</span>
               <div className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden bg-white shadow-xs">
-                {selectedOrder.items?.map((item) => {
-                  const gross = (item.quantity || 0) * (item.unit_price_paise || 0);
-                  const discPaise = Math.max(0, gross - (item.taxable_value_paise || gross));
-                  const discPct = gross > 0 && discPaise > 0 ? Math.round((discPaise / gross) * 10000) / 100 : 0;
-                  return (
-                    <div key={item.id} className="p-3 flex justify-between items-center">
-                      <div>
-                        <p className="font-bold text-slate-900 text-xs">{item.product_name_snapshot}</p>
-                        <p className="font-mono text-xs text-slate-500">
-                          {item.quantity} × {formatPaise(item.unit_price_paise)}
-                          {discPct > 0 && (
-                            <span className="ml-1.5 font-sans font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded text-[10px]">
-                              {discPct}% OFF (-{formatPaise(discPaise)})
-                            </span>
-                          )}
-                        </p>
-                      </div>
-                      <span className="font-mono font-bold text-sm text-slate-900 tabular-nums">
-                        {formatPaise(item.line_total_paise)}
-                      </span>
+                {selectedOrder.items?.map((item) => (
+                  <div key={item.id} className="p-3 flex justify-between items-center">
+                    <div>
+                      <p className="font-bold text-slate-900 text-xs">{item.product_name_snapshot}</p>
+                      <p className="font-mono text-xs text-slate-500">
+                        {item.quantity} × {formatPaise(item.unit_price_paise)}
+                      </p>
                     </div>
-                  );
-                })}
+                    <span className="font-mono font-bold text-sm text-slate-900 tabular-nums">
+                      {formatPaise(item.line_total_paise)}
+                    </span>
+                  </div>
+                ))}
                 {(() => {
                   const grossSum = selectedOrder.items?.reduce((s, itm) => s + ((itm.quantity || 0) * (itm.unit_price_paise || 0)), 0) || 0;
                   const discSum = Math.max(0, grossSum - (selectedOrder.taxable_value_paise || grossSum));
+                  const discPct = grossSum > 0 && discSum > 0 ? Math.round((discSum / grossSum) * 10000) / 100 : 0;
                   return (
                     <>
                       {discSum > 0 && (
                         <>
                           <div className="p-2.5 bg-slate-50 flex justify-between text-xs text-slate-600 border-t border-slate-200">
-                            <span>Items Gross Base:</span>
+                            <span>Total Gross Base Value:</span>
                             <span className="font-mono text-slate-800">{formatPaise(grossSum)}</span>
                           </div>
                           <div className="p-2.5 bg-slate-50 flex justify-between text-xs text-emerald-700 font-semibold border-t border-slate-100">
-                            <span>Product Discount:</span>
+                            <span>Order Discount ({discPct}%):</span>
                             <span className="font-mono">-{formatPaise(discSum)}</span>
                           </div>
                         </>
@@ -465,7 +456,7 @@ export default function AdminOrders() {
                   );
                 })()}
                 <div className="p-2.5 bg-slate-50 flex justify-between text-xs text-slate-600 border-t border-slate-100">
-                  <span>Total GST:</span>
+                  <span>Total GST {selectedOrder.total_tax_paise > 0 ? '(5%)' : '(0%)'}:</span>
                   <span className="font-mono font-bold text-emerald-800">+{formatPaise(selectedOrder.total_tax_paise || 0)}</span>
                 </div>
                 <div className="p-3 bg-amber-50/80 flex justify-between font-bold text-sm text-amber-950 border-t border-amber-200">

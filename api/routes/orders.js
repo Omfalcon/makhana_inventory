@@ -21,6 +21,7 @@ router.post('/place', authenticate, async (req, res) => {
             customerStateCode = '10',
             customerGstin = null,
             items,
+            discountPercent = 0,
             idempotencyKey,
             applyGst = true
         } = req.body;
@@ -76,17 +77,10 @@ router.post('/place', authenticate, async (req, res) => {
             });
         }
 
-        // Map of discounts by product ID
-        const discountMap = new Map();
-        if (Array.isArray(items)) {
-            items.forEach(itm => {
-                const pid = itm.productId || itm.product_id;
-                const disc = Math.max(0, Math.min(100, parseFloat(itm.discountPercent || itm.discount_percent || 0)));
-                if (pid) discountMap.set(pid, disc);
-            });
-        }
+        // Total order discount percentage (applies over total order value)
+        const orderDiscountPct = Math.max(0, Math.min(100, parseFloat(discountPercent || 0)));
 
-        // Fetch generated order items and apply discount and GST correctly
+        // Fetch generated order items and apply total order discount & GST
         const { data: orderItems, error: itemsErr } = await supabaseAdmin
             .from('order_items')
             .select('id, product_id, unit_price_paise, quantity, taxable_value_paise, gst_rate_snapshot')
@@ -101,10 +95,10 @@ router.post('/place', authenticate, async (req, res) => {
 
             const isInterState = Boolean(data.is_inter_state);
 
+            // Apply total order discount pro-rata across items
             for (const item of orderItems) {
-                const discPct = discountMap.get(item.product_id) || 0;
                 const grossPaise = item.unit_price_paise * item.quantity;
-                const discountPaise = Math.round((grossPaise * discPct) / 100);
+                const discountPaise = orderDiscountPct > 0 ? Math.round((grossPaise * orderDiscountPct) / 100) : 0;
                 const taxablePaise = Math.max(0, grossPaise - discountPaise);
 
                 let itemCgst = 0;
@@ -176,12 +170,11 @@ router.post('/place', authenticate, async (req, res) => {
 
                 if (invData?.invoice_items_snapshot) {
                     const enriched = invData.invoice_items_snapshot.map(snItem => {
-                        const discPct = discountMap.get(snItem.product_id) || 0;
                         const gross = (snItem.unit_price_paise || 0) * (snItem.quantity || 0);
                         const discAmount = Math.max(0, gross - (snItem.taxable_value_paise || 0));
                         return {
                             ...snItem,
-                            discount_percent: discPct > 0 ? discPct : (gross > 0 && discAmount > 0 ? Math.round((discAmount / gross) * 10000) / 100 : 0),
+                            discount_percent: orderDiscountPct,
                             discount_paise: discAmount
                         };
                     });
