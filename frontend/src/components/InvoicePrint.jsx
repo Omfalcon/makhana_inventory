@@ -32,6 +32,8 @@ export default function InvoicePrint({ invoice, onClose }) {
     : [];
 
   const totalQuantity = items.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+  const totalGrossBasePaise = items.reduce((sum, item) => sum + (Number(item.unit_price_paise || 0) * Number(item.quantity || 0)), 0);
+  const totalDiscountPaise = Math.max(0, totalGrossBasePaise - Number(invoice.taxable_value_paise || 0));
 
   const modalContent = (
     <div
@@ -165,6 +167,7 @@ export default function InvoicePrint({ invoice, onClose }) {
                 <th className="p-1.5 border-r border-slate-300 print:border-slate-800 text-center">HSN/SAC</th>
                 <th className="p-1.5 border-r border-slate-300 print:border-slate-800 text-center">Qty</th>
                 <th className="p-1.5 border-r border-slate-300 print:border-slate-800 text-right">Unit Rate (Base)</th>
+                <th className="p-1.5 border-r border-slate-300 print:border-slate-800 text-center">Disc %</th>
                 <th className="p-1.5 border-r border-slate-300 print:border-slate-800 text-right">Taxable Base (₹)</th>
                 <th className="p-1.5 border-r border-slate-300 print:border-slate-800 text-center">GST %</th>
                 <th className="p-1.5 border-r border-slate-300 print:border-slate-800 text-right">GST (₹)</th>
@@ -174,6 +177,13 @@ export default function InvoicePrint({ invoice, onClose }) {
             <tbody className="divide-y divide-slate-200 print:divide-slate-800">
               {items.map((item, index) => {
                 const itemGst = (item.cgst_paise || 0) + (item.sgst_paise || 0) + (item.igst_paise || 0);
+                const grossPaise = Number(item.unit_price_paise || 0) * Number(item.quantity || 0);
+                const taxablePaise = Number(item.taxable_value_paise || 0);
+                const discPaise = Math.max(0, grossPaise - taxablePaise);
+                const discPercent = item.discount_percent !== undefined
+                  ? Number(item.discount_percent)
+                  : (grossPaise > 0 && discPaise > 0 ? Math.round((discPaise / grossPaise) * 10000) / 100 : 0);
+
                 return (
                   <tr key={index} className="text-xs print:text-[10px]">
                     <td className="p-1.5 border-r border-slate-200 print:border-slate-800 text-center font-medium text-slate-500 print:text-black">
@@ -192,7 +202,10 @@ export default function InvoicePrint({ invoice, onClose }) {
                     <td className="p-1.5 border-r border-slate-200 print:border-slate-800 text-right font-mono">
                       {formatPaise(item.unit_price_paise)}
                     </td>
-                    <td className="p-1.5 border-r border-slate-200 print:border-slate-800 text-right font-mono">
+                    <td className="p-1.5 border-r border-slate-200 print:border-slate-800 text-center font-mono font-semibold">
+                      {discPercent > 0 ? `${discPercent}%` : '-'}
+                    </td>
+                    <td className="p-1.5 border-r border-slate-200 print:border-slate-800 text-right font-mono font-semibold">
                       {formatPaise(item.taxable_value_paise)}
                     </td>
                     <td className="p-1.5 border-r border-slate-200 print:border-slate-800 text-center">
@@ -217,6 +230,9 @@ export default function InvoicePrint({ invoice, onClose }) {
                   {totalQuantity}
                 </td>
                 <td className="p-1.5 border-r border-slate-300 print:border-slate-800" />
+                <td className="p-1.5 border-r border-slate-300 print:border-slate-800 text-center font-mono text-[10px] text-slate-500 print:text-black">
+                  {totalDiscountPaise > 0 ? `-${formatPaise(totalDiscountPaise)}` : '-'}
+                </td>
                 <td className="p-1.5 border-r border-slate-300 print:border-slate-800 text-right font-mono">
                   {formatPaise(invoice.taxable_value_paise)}
                 </td>
@@ -253,6 +269,18 @@ export default function InvoicePrint({ invoice, onClose }) {
 
           {/* Tax Calculation Summary Box */}
           <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1.5 text-xs print:bg-transparent print:border print:border-slate-800 print:rounded-none print:p-2 print:text-[10.5px]">
+            {totalDiscountPaise > 0 && (
+              <>
+                <div className="flex justify-between text-slate-600 print:text-black">
+                  <span>Gross Base Amount:</span>
+                  <span className="font-mono font-semibold">{formatPaise(totalGrossBasePaise)}</span>
+                </div>
+                <div className="flex justify-between text-emerald-800 print:text-black font-semibold">
+                  <span>Product Discount:</span>
+                  <span className="font-mono font-semibold">-{formatPaise(totalDiscountPaise)}</span>
+                </div>
+              </>
+            )}
             <div className="flex justify-between text-slate-600 print:text-black">
               <span>Taxable Value (Base Price):</span>
               <span className="font-mono font-semibold">{formatPaise(invoice.taxable_value_paise)}</span>

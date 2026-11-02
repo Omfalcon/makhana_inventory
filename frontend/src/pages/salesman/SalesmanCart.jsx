@@ -15,8 +15,11 @@ export default function SalesmanCart({ onNavigate }) {
   const {
     items,
     updateQuantity,
+    updateDiscount,
     removeFromCart,
     clearCart,
+    grossSubtotalPaise,
+    totalDiscountPaise,
     subtotalPaise,
     totalUnits,
     customerInfo,
@@ -160,7 +163,8 @@ export default function SalesmanCart({ onNavigate }) {
         customerGstin: customerInfo.customerGstin?.trim() || null,
         items: items.map(i => ({
           productId: i.product.id,
-          quantity: i.quantity
+          quantity: i.quantity,
+          discountPercent: i.discountPercent || 0
         })),
         idempotencyKey,
         applyGst
@@ -356,65 +360,107 @@ export default function SalesmanCart({ onNavigate }) {
 
             {/* Table layout on desktop, responsive stack on mobile */}
             <div className="divide-y divide-slate-100">
-              {items.map(({ product, quantity }) => (
-                <div key={product.id} className="p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/60 transition">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-bold text-slate-900 text-sm sm:text-base truncate">
-                        {product.name}
-                      </h4>
-                      <span className="text-[10px] font-mono bg-emerald-50 text-emerald-800 px-1.5 py-0.5 rounded border border-emerald-200 font-bold">
-                        GST {applyGst ? (product.gst_rate || 5) : 0}%
+              {items.map(({ product, quantity, discountPercent }) => {
+                const grossItemPaise = product.selling_price_paise * quantity;
+                const discPct = discountPercent || 0;
+                const itemDiscountPaise = Math.round((grossItemPaise * discPct) / 100);
+                const discountedTaxablePaise = Math.max(0, grossItemPaise - itemDiscountPaise);
+
+                return (
+                  <div key={product.id} className="p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/60 transition">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-bold text-slate-900 text-sm sm:text-base truncate">
+                          {product.name}
+                        </h4>
+                        <span className="text-[10px] font-mono bg-emerald-50 text-emerald-800 px-1.5 py-0.5 rounded border border-emerald-200 font-bold shrink-0">
+                          GST {applyGst ? (product.gst_rate || 5) : 0}%
+                        </span>
+                        {discPct > 0 && (
+                          <span className="text-[10px] font-mono bg-amber-50 text-amber-900 border border-amber-300 px-1.5 py-0.5 rounded font-bold shrink-0">
+                            {discPct}% OFF
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-xs text-slate-500 font-mono font-medium block mt-0.5">
+                        Base Rate: {formatPaise(product.selling_price_paise)} / unit • In Stock: {product.stock_quantity}
                       </span>
                     </div>
-                    <span className="text-xs text-slate-500 font-mono font-medium block mt-0.5">
-                      Base Rate: {formatPaise(product.selling_price_paise)} / unit • In Stock: {product.stock_quantity}
-                    </span>
-                  </div>
 
-                  {/* Quantity Stepper & Line Total */}
-                  <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-5">
-                    {/* Stepper */}
-                    <div className="flex items-center bg-white border border-slate-300 rounded-lg overflow-hidden shadow-2xs">
-                      <button
-                        type="button"
-                        onClick={() => updateQuantity(product.id, quantity - 1)}
-                        className="w-8 h-8 flex items-center justify-center bg-slate-50 hover:bg-slate-100 text-slate-800 font-bold border-r border-slate-200 transition"
-                      >
-                        <Minus className="w-3.5 h-3.5" />
-                      </button>
-                      <span className="w-9 text-center font-bold text-xs font-mono text-slate-900">{quantity}</span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (quantity < product.stock_quantity) {
-                            updateQuantity(product.id, quantity + 1);
-                          }
-                        }}
-                        disabled={quantity >= product.stock_quantity}
-                        className="w-8 h-8 flex items-center justify-center bg-slate-50 hover:bg-slate-100 text-slate-800 font-bold border-l border-slate-200 transition disabled:opacity-30"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
+                    {/* Quantity Stepper, Optional Discount & Line Total */}
+                    <div className="flex flex-wrap items-center justify-between sm:justify-end gap-2.5 sm:gap-4">
+                      {/* Stepper */}
+                      <div className="flex items-center bg-white border border-slate-300 rounded-lg overflow-hidden shadow-2xs">
+                        <button
+                          type="button"
+                          onClick={() => updateQuantity(product.id, quantity - 1)}
+                          className="w-8 h-8 flex items-center justify-center bg-slate-50 hover:bg-slate-100 text-slate-800 font-bold border-r border-slate-200 transition"
+                        >
+                          <Minus className="w-3.5 h-3.5" />
+                        </button>
+                        <span className="w-9 text-center font-bold text-xs font-mono text-slate-900">{quantity}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (quantity < product.stock_quantity) {
+                              updateQuantity(product.id, quantity + 1);
+                            }
+                          }}
+                          disabled={quantity >= product.stock_quantity}
+                          className="w-8 h-8 flex items-center justify-center bg-slate-50 hover:bg-slate-100 text-slate-800 font-bold border-l border-slate-200 transition disabled:opacity-30"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
 
-                    {/* Subtotal */}
-                    <div className="text-right min-w-[85px]">
-                      <span className="font-mono font-bold text-sm sm:text-base text-slate-900 block tabular-nums">
-                        {formatPaise(product.selling_price_paise * quantity)}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => removeFromCart(product.id)}
-                        className="text-[11px] text-rose-600 hover:text-rose-700 font-semibold flex items-center gap-1 justify-end mt-0.5 transition"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                        <span>Remove</span>
-                      </button>
+                      {/* Optional Discount Input */}
+                      <div className="flex items-center gap-1 bg-slate-50 border border-slate-300 rounded-lg px-2 py-1 shadow-2xs" title="Optional Discount %">
+                        <span className="text-[10px] font-bold uppercase text-slate-500">Disc:</span>
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="any"
+                          placeholder="0"
+                          value={discPct > 0 ? discPct : ''}
+                          onChange={(e) => updateDiscount(product.id, e.target.value)}
+                          className="w-12 text-center text-xs font-mono font-bold text-slate-900 bg-white border border-slate-200 rounded px-1 py-0.5 focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
+                        />
+                        <span className="text-xs font-bold text-slate-500">%</span>
+                      </div>
+
+                      {/* Subtotal */}
+                      <div className="text-right min-w-[95px]">
+                        {discPct > 0 ? (
+                          <>
+                            <span className="text-[10.5px] font-mono text-slate-400 line-through block tabular-nums">
+                              {formatPaise(grossItemPaise)}
+                            </span>
+                            <span className="font-mono font-bold text-sm sm:text-base text-emerald-900 block tabular-nums">
+                              {formatPaise(discountedTaxablePaise)}
+                            </span>
+                            <span className="text-[10px] font-bold text-emerald-700 block tabular-nums">
+                              Saved {formatPaise(itemDiscountPaise)}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="font-mono font-bold text-sm sm:text-base text-slate-900 block tabular-nums">
+                            {formatPaise(grossItemPaise)}
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => removeFromCart(product.id)}
+                          className="text-[11px] text-rose-600 hover:text-rose-700 font-semibold flex items-center gap-1 justify-end mt-0.5 transition"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          <span>Remove</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
@@ -471,12 +517,29 @@ export default function SalesmanCart({ onNavigate }) {
             </div>
 
             <div className="space-y-1.5 text-xs font-semibold text-slate-600">
-              <div className="flex justify-between">
-                <span>Items Base Price (Taxable):</span>
-                <span className="font-mono tabular-nums text-slate-800 font-bold">{formatPaise(taxablePaise)}</span>
-              </div>
+              {totalDiscountPaise > 0 ? (
+                <>
+                  <div className="flex justify-between">
+                    <span>Items Gross Base Price:</span>
+                    <span className="font-mono tabular-nums text-slate-800">{formatPaise(grossSubtotalPaise)}</span>
+                  </div>
+                  <div className="flex justify-between text-emerald-700 font-bold">
+                    <span>Product Discount:</span>
+                    <span className="font-mono tabular-nums">-{formatPaise(totalDiscountPaise)}</span>
+                  </div>
+                  <div className="flex justify-between border-t border-slate-100 pt-1 text-slate-800 font-bold">
+                    <span>Net Taxable Base:</span>
+                    <span className="font-mono tabular-nums">{formatPaise(taxablePaise)}</span>
+                  </div>
+                </>
+              ) : (
+                <div className="flex justify-between">
+                  <span>Items Base Price (Taxable):</span>
+                  <span className="font-mono tabular-nums text-slate-800 font-bold">{formatPaise(taxablePaise)}</span>
+                </div>
+              )}
               <div className="flex justify-between border-t border-slate-100 pt-1.5 text-slate-700 font-bold">
-                <span>GST ({applyGst ? '5%' : '0%'}):</span>
+                <span>GST ({applyGst ? '5%' : '0%'} on Discounted Base):</span>
                 <span className="font-mono tabular-nums text-emerald-800 font-bold">
                   {applyGst ? `+${formatPaise(totalGstPaise)}` : '₹0.00 (Unticked)'}
                 </span>
@@ -490,7 +553,9 @@ export default function SalesmanCart({ onNavigate }) {
                   Total Payable Amount:
                 </span>
                 <span className="text-[10.5px] text-slate-500 font-semibold">
-                  {applyGst ? 'Base Price + 5% GST' : 'Base Price Only (No GST)'}
+                  {applyGst
+                    ? totalDiscountPaise > 0 ? 'Discounted Base + 5% GST' : 'Base Price + 5% GST'
+                    : totalDiscountPaise > 0 ? 'Discounted Base Only (No GST)' : 'Base Price Only (No GST)'}
                 </span>
               </div>
               <span className="font-mono font-black text-xl text-emerald-800 tabular-nums">

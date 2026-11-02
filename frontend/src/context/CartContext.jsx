@@ -69,7 +69,7 @@ export function CartProvider({ children }) {
         return updated;
       } else {
         const safeQty = Math.min(quantity, product.stock_quantity);
-        return [...prevItems, { product, quantity: safeQty }];
+        return [...prevItems, { product, quantity: safeQty, discountPercent: 0 }];
       }
     });
     return true;
@@ -89,6 +89,19 @@ export function CartProvider({ children }) {
         return i;
       });
     });
+  };
+
+  // Set discount percentage for a product (0 to 100)
+  const updateDiscount = (productId, discountPercent) => {
+    let parsed = parseFloat(discountPercent);
+    if (isNaN(parsed) || parsed < 0) parsed = 0;
+    if (parsed > 100) parsed = 100;
+    setItems(prevItems => prevItems.map(i => {
+      if (i.product.id === productId) {
+        return { ...i, discountPercent: parsed };
+      }
+      return i;
+    }));
   };
 
   // Remove single item
@@ -115,16 +128,25 @@ export function CartProvider({ children }) {
 
   // Calculate totals
   const totalUnits = items.reduce((sum, item) => sum + item.quantity, 0);
-  const subtotalPaise = items.reduce((sum, item) => sum + (item.product.selling_price_paise * item.quantity), 0);
+  const grossSubtotalPaise = items.reduce((sum, item) => sum + (item.product.selling_price_paise * item.quantity), 0);
+  const totalDiscountPaise = items.reduce((sum, item) => {
+    const gross = item.product.selling_price_paise * item.quantity;
+    const disc = Math.round((gross * (item.discountPercent || 0)) / 100);
+    return sum + disc;
+  }, 0);
+  const subtotalPaise = Math.max(0, grossSubtotalPaise - totalDiscountPaise); // Discounted taxable base
 
   const value = {
     items,
     totalUnits,
+    grossSubtotalPaise,
+    totalDiscountPaise,
     subtotalPaise,
     customerInfo,
     setCustomerInfo,
     addToCart,
     updateQuantity,
+    updateDiscount,
     removeFromCart,
     clearCart
   };

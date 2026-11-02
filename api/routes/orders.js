@@ -76,41 +76,88 @@ router.post('/place', authenticate, async (req, res) => {
             });
         }
 
-        // If salesman unticked GST (applyGst === false):
-        // Set taxes to 0 on order_items and order
-        if (applyGst === false) {
-            const { data: orderItems, error: itemsErr } = await supabaseAdmin
-                .from('order_items')
-                .select('id, taxable_value_paise')
-                .eq('order_id', data.order_id);
+        // Map of discounts by product ID
+        const discountMap = new Map();
+        if (Array.isArray(items)) {
+            items.forEach(itm => {
+                const pid = itm.productId || itm.product_id;
+                const disc = Math.max(0, Math.min(100, parseFloat(itm.discountPercent || itm.discount_percent || 0)));
+                if (pid) discountMap.set(pid, disc);
+            });
+        }
 
-            if (!itemsErr && orderItems) {
-                let totalWithoutTax = 0;
-                for (const item of orderItems) {
-                    totalWithoutTax += item.taxable_value_paise;
-                    await supabaseAdmin
-                        .from('order_items')
-                        .update({
-                            gst_rate_snapshot: 0,
-                            cgst_paise: 0,
-                            sgst_paise: 0,
-                            igst_paise: 0,
-                            line_total_paise: item.taxable_value_paise
-                        })
-                        .eq('id', item.id);
+        // Fetch generated order items and apply discount and GST correctly
+        const { data: orderItems, error: itemsErr } = await supabaseAdmin
+            .from('order_items')
+            .select('id, product_id, unit_price_paise, quantity, taxable_value_paise, gst_rate_snapshot')
+            .eq('order_id', data.order_id);
+
+        if (!itemsErr && orderItems) {
+            let totalOrderTaxablePaise = 0;
+            let totalOrderCgstPaise = 0;
+            let totalOrderSgstPaise = 0;
+            let totalOrderIgstPaise = 0;
+            let totalOrderAmountPaise = 0;
+
+            const isInterState = Boolean(data.is_inter_state);
+
+            for (const item of orderItems) {
+                const discPct = discountMap.get(item.product_id) || 0;
+                const grossPaise = item.unit_price_paise * item.quantity;
+                const discountPaise = Math.round((grossPaise * discPct) / 100);
+                const taxablePaise = Math.max(0, grossPaise - discountPaise);
+
+                let itemCgst = 0;
+                let itemSgst = 0;
+                let itemIgst = 0;
+                let itemGstRate = 0;
+                let itemLineTotal = taxablePaise;
+
+                if (applyGst !== false) {
+                    itemGstRate = item.gst_rate_snapshot || 5.0;
+                    const totalTax = Math.round((taxablePaise * itemGstRate) / 100);
+                    if (isInterState) {
+                        itemIgst = totalTax;
+                    } else {
+                        itemCgst = Math.round(totalTax / 2);
+                        itemSgst = totalTax - itemCgst;
+                    }
+                    itemLineTotal = taxablePaise + totalTax;
                 }
 
-                await supabaseAdmin
-                    .from('orders')
-                    .update({
-                        total_tax_paise: 0,
-                        total_amount_paise: totalWithoutTax
-                    })
-                    .eq('id', data.order_id);
+                totalOrderTaxablePaise += taxablePaise;
+                totalOrderCgstPaise += itemCgst;
+                totalOrderSgstPaise += itemSgst;
+                totalOrderIgstPaise += itemIgst;
+                totalOrderAmountPaise += itemLineTotal;
 
-                data.total_tax_paise = 0;
-                data.total_amount_paise = totalWithoutTax;
+                await supabaseAdmin
+                    .from('order_items')
+                    .update({
+                        gst_rate_snapshot: itemGstRate,
+                        taxable_value_paise: taxablePaise,
+                        cgst_paise: itemCgst,
+                        sgst_paise: itemSgst,
+                        igst_paise: itemIgst,
+                        line_total_paise: itemLineTotal
+                    })
+                    .eq('id', item.id);
             }
+
+            const totalTaxPaise = totalOrderCgstPaise + totalOrderSgstPaise + totalOrderIgstPaise;
+
+            await supabaseAdmin
+                .from('orders')
+                .update({
+                    taxable_value_paise: totalOrderTaxablePaise,
+                    total_tax_paise: totalTaxPaise,
+                    total_amount_paise: totalOrderAmountPaise
+                })
+                .eq('id', data.order_id);
+
+            data.taxable_value_paise = totalOrderTaxablePaise;
+            data.total_tax_paise = totalTaxPaise;
+            data.total_amount_paise = totalOrderAmountPaise;
         }
 
         // Automatically generate invoice snapshot for the order
@@ -126,6 +173,24 @@ router.post('/place', authenticate, async (req, res) => {
                     .select('*')
                     .eq('id', invRes.invoice_id)
                     .single();
+
+                if (invData?.invoice_items_snapshot) {
+                    const enriched = invData.invoice_items_snapshot.map(snItem => {
+                        const discPct = discountMap.get(snItem.product_id) || 0;
+                        const gross = (snItem.unit_price_paise || 0) * (snItem.quantity || 0);
+                        const discAmount = Math.max(0, gross - (snItem.taxable_value_paise || 0));
+                        return {
+                            ...snItem,
+                            discount_percent: discPct > 0 ? discPct : (gross > 0 && discAmount > 0 ? Math.round((discAmount / gross) * 10000) / 100 : 0),
+                            discount_paise: discAmount
+                        };
+                    });
+                    await supabaseAdmin
+                        .from('invoices')
+                        .update({ invoice_items_snapshot: enriched })
+                        .eq('id', invData.id);
+                    invData.invoice_items_snapshot = enriched;
+                }
                 generatedInvoice = invData;
             }
         } catch (invEx) {
